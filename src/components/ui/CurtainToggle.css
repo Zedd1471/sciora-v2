@@ -1,0 +1,115 @@
+:root {
+	--theme-bg-clr: #f3f2ee;
+	--theme-toggle-icon: #0f0f0f;
+	--theme-toggle-border: rgba(0, 0, 0, 0.25);
+	--toggle-label-txt: "light";
+	--theme-toggle-light-scale: 1;
+	--theme-toggle-dark-scale: 0;
+	--theme-toggle-rotate: 0turn;
+}
+
+:root.dark,
+:root:has(input#theme:checked) {
+	--theme-bg-clr: #141519;
+	--theme-toggle-icon: #ffffff;
+	--theme-toggle-border: rgba(255, 255, 255, 0.25);
+	--toggle-label-txt: "dark";
+	--theme-toggle-light-scale: 0;
+	--theme-toggle-dark-scale: 1;
+	--theme-toggle-rotate: 1turn;
+}
+
+.theme-toggle {
+	position: relative;
+	width: 58px;
+	height: 58px;
+	padding: 0.85rem;
+	display: grid;
+	place-items: center;
+	transition: outline 150ms ease-in-out, background-color 200ms ease;
+	cursor: pointer;
+	border-radius: 50%;
+	outline: 1px solid var(--theme-toggle-border);
+	color: var(--theme-toggle-icon);
+	background: var(--glass-bg);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	box-shadow: var(--shadow-md);
+}
+
+.theme-toggle::before {
+	content: var(--toggle-label-txt);
+	position: absolute;
+	bottom: 100%;
+	left: 50%;
+	translate: -50% var(--toggle-label-y, 10px);
+	font-size: 0.7rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	opacity: var(--toggle-label-opacity, 0);
+	transition-property: opacity, translate;
+	transition-duration: 150ms;
+	transition-timing-function: ease-in-out;
+	pointer-events: none;
+	color: var(--theme-toggle-icon);
+}
+
+input#theme:focus-within ~ label,
+.theme-toggle:hover {
+	outline-width: 8px;
+	--toggle-label-y: -12px;
+	--toggle-label-opacity: 1;
+}
+
+.theme-toggle > svg {
+	grid-area: 1/1;
+	transition: scale 300ms ease-in-out, rotate 500ms ease-in-out;
+	width: 100%;
+	height: 100%;
+	scale: var(--theme-toggle-dark-scale, 0);
+	rotate: var(--theme-toggle-rotate, 0turn);
+}
+
+.theme-toggle > svg:first-child {
+	scale: var(--theme-toggle-light-scale, 1);
+}
+
+/* mask for cascading theme transition */
+.theme-mask {
+	position: fixed;
+	display: grid;
+	isolation: isolate;
+	overflow: hidden;
+	inset: 0;
+	grid-template-rows: repeat(25, 1fr);
+	pointer-events: none;
+	z-index: 35;
+	opacity: 0;
+	transition: opacity 250ms ease;
+}
+
+.theme-mask.active {
+	opacity: 1;
+}
+
+/* mask "cells" */
+.theme-mask > div {
+	background-color: var(--theme-bg-clr);
+	scale: 0;
+	transition: transform 300ms ease-in-out, scale 300ms ease-in-out;
+	transition-delay: calc(var(--i) * 10ms);
+	opacity: 0.95;
+}
+
+.theme-mask.active > div {
+	scale: 1.25;
+}
+
+.theme-mask.theme-mask-dark > div {
+	background-color: #141519;
+}
+
+.theme-mask.theme-mask-light > div {
+	background-color: #f3f2ee;
+}

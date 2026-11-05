@@ -1,0 +1,351 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* â”€â”€â”€ Design Tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+:root {
+  /* Surfaces — off-white editorial tone */
+  --background: #f3f2ee;
+  --foreground: #0f0f0f;
+
+  /* Text tiers — contrast-checked against --background (≥4.5:1) */
+  --muted: #525252;        /* secondary text — 7.3:1 */
+  --muted-strong: #3f3f46; /* emphasized secondary — 9.6:1 */
+  --faint: #737373;        /* placeholders/disabled only — 4.7:1 */
+
+  /* Accent — rich royal indigo-blue (high-contrast AAA against light background) */
+  --accent: #4338ca;
+  --accent-hover: #3730a3;
+  --accent-fg: #ffffff;
+  --accent-soft: rgba(67, 56, 202, 0.08);
+  --accent-glow: rgba(67, 56, 202, 0.2);
+  --focus: rgba(67, 56, 202, 0.7);
+
+  /* Status — AA on --background */
+  --danger: #b91c1c;
+  --success: #047857;
+  --warning: #b45309;
+
+  /* Glass surfaces */
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.07);
+  --edge: rgba(0, 0, 0, 0.08);
+
+  /* Shadows — tinted to accent hue, offset + soft blur */
+  --shadow-sm: 0 2px 8px rgba(99, 102, 241, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 8px 32px rgba(99, 102, 241, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 24px 64px rgba(99, 102, 241, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 32px 80px rgba(99, 102, 241, 0.18), 0 8px 24px rgba(0, 0, 0, 0.08);
+
+  /* Motion */
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Wordmark gradient — the Sciora logotype, theme-aware */
+  --wm-1: #0f0f23;
+  --wm-2: #4f46e5;
+  --wm-3: #7c3aed;
+  --wm-4: #c4b5fd;
+}
+
+.dark {
+  /* Surfaces — rich dark grey */
+  --background: #141519;
+  --foreground: #f0f0f2;
+
+  --muted: #a1a1aa;
+  --muted-strong: #d4d4d8;
+  --faint: #71717a;
+
+  --danger: #f87171;
+  --success: #34d399;
+  --warning: #fbbf24;
+
+  /* Accent — bright indigo on dark surfaces */
+  --accent: #818cf8;
+  --accent-hover: #a5b4fc;
+  --accent-soft: rgba(129, 140, 248, 0.15);
+  --accent-glow: rgba(129, 140, 248, 0.25);
+  --focus: rgba(129, 140, 248, 0.75);
+
+  --glass-bg: rgba(28, 30, 38, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --edge: rgba(255, 255, 255, 0.09);
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 80px rgba(99, 102, 241, 0.06);
+  --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.7), 0 0 96px rgba(99, 102, 241, 0.1);
+
+  --wm-1: #e0e7ff;
+  --wm-2: #a5b4fc;
+  --wm-3: #818cf8;
+  --wm-4: #c4b5fd;
+
+  color-scheme: dark;
+}
+
+/* â”€â”€â”€ Tailwind Theme Mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-strong: var(--muted-strong);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-edge: var(--edge);
+  --color-focus: var(--focus);
+
+  /* Elevation utilities: shadow-soft / shadow-card / shadow-float / shadow-lift */
+  --shadow-soft: var(--shadow-sm);
+  --shadow-card: var(--shadow-md);
+  --shadow-float: var(--shadow-lg);
+  --shadow-lift: var(--shadow-xl);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* â”€â”€â”€ Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* Browser surfaces carry the design too */
+  ::selection {
+    background: rgba(99, 102, 241, 0.4);
+    color: var(--foreground);
+  }
+  input,
+  textarea,
+  [contenteditable] {
+    caret-color: var(--accent);
+  }
+
+  /* One focus ring for the whole app — visible on every control */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* Custom scrollbar — minimal, premium */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(99, 102, 241, 0.35) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.25);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.45);
+  }
+
+  /* Custom cursor is a pointer-device effect, not a focus affordance —
+     keyboard users get the system pointer back. */
+  @media (min-width: 768px) {
+    body.hide-cursor * {
+      cursor: none !important;
+    }
+    body.keyboard-nav * {
+      cursor: auto !important;
+    }
+  }
+
+  /* Noise grain overlay — fixed, pointer-events-none */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: none;
+    opacity: 0.028;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 128px 128px;
+  }
+}
+
+/* â”€â”€â”€ Components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@layer components {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Sciora logotype — the one place gradient type is permitted */
+  .wordmark {
+    background-image: linear-gradient(
+      135deg,
+      var(--wm-1) 0%,
+      var(--wm-2) 45%,
+      var(--wm-3) 80%,
+      var(--wm-4) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Glass surface — resting elevation */
+  .glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    /* Inner highlight — simulates edge refraction */
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.15),
+      var(--shadow-md);
+  }
+
+  /* Interactive elevation — declared once, applied via .lift */
+  .lift {
+    transition:
+      box-shadow 300ms var(--ease-out-expo),
+      border-color 300ms var(--ease-out-expo);
+  }
+
+  /* Custom-cursor halo — the only place an inset glow is allowed */
+  .cursor-glow {
+    box-shadow:
+      inset 0 4px 12px rgba(255, 255, 255, 0.3),
+      0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Double-bezel card */
+  .card-outer {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 2rem;
+    padding: 4px;
+  }
+  .card-inner {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: calc(2rem - 4px);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  }
+
+  /* Form field */
+  .field {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid var(--edge);
+    border-radius: 0.75rem;
+    color: var(--foreground);
+    transition:
+      border-color 200ms var(--ease-out-expo),
+      box-shadow 200ms var(--ease-out-expo);
+  }
+  .dark .field {
+    background: rgba(0, 0, 0, 0.8);
+  }
+  .field::placeholder {
+    color: var(--faint);
+  }
+  .field:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--focus);
+  }
+  .field[aria-invalid="true"] {
+    border-color: var(--danger);
+  }
+  .field[aria-invalid="true"]:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 45%, transparent);
+  }
+  .field:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: rgba(0, 0, 0, 0.04);
+  }
+  .dark .field:disabled {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .field[type="file"] {
+    padding: 0.625rem 0.75rem;
+  }
+  .field[type="file"]::file-selector-button {
+    margin-right: 0.75rem;
+    padding: 0.5rem 1rem;
+    border: 0;
+    border-radius: 0.5rem;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  .field[type="file"]::file-selector-button:hover {
+    background: var(--accent-glow);
+  }
+
+  .transition-spring {
+    transition: all 500ms var(--ease-spring);
+  }
+  .transition-expo {
+    transition: all 400ms var(--ease-out-expo);
+  }
+
+  /* Skip to content */
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.5rem 1rem;
+    background: var(--accent);
+    color: var(--accent-fg);
+    border-radius: 0 0 0.5rem 0.5rem;
+    font-weight: 600;
+    transition: top 200ms;
+  }
+  .skip-link:focus {
+    top: 0;
+  }
+}
+
+/* â”€â”€â”€ Reduced Motion â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
