@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, BookOpen, CalendarCheck } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
@@ -73,17 +73,6 @@ export default function Home() {
                 <ArrowRight className="h-4 w-4" />
               </span>
             )}
-          </Button>
-
-          <Button
-            size="lg"
-            variant="glass"
-            onClick={() => router.push("/attendance")}
-            aria-label="Attendance check-in"
-            className="group rounded-full px-8"
-          >
-            <CalendarCheck className="h-5 w-5 text-accent" aria-hidden="true" />
-            Lecture Attendance
           </Button>
         </motion.div>
       </motion.div>
