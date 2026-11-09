@@ -19,6 +19,18 @@ const FOCUSABLE =
  *    transform-origin defaults to center (modal is centered) so the scale
  *    feels anchored.
  */
+export type ModalSize = "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "full";
+
+const MODAL_SIZES: Record<ModalSize, string> = {
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-xl",
+  xl: "max-w-3xl",
+  "2xl": "max-w-5xl",
+  "3xl": "max-w-6xl xl:max-w-7xl",
+  full: "w-[96vw] max-w-[1400px]",
+};
+
 export function Modal({
   open,
   isOpen,
@@ -27,6 +39,7 @@ export function Modal({
   children,
   dismissible = true,
   className = "",
+  size = "md",
 }: {
   open?: boolean;
   isOpen?: boolean;
@@ -35,6 +48,7 @@ export function Modal({
   children: React.ReactNode;
   dismissible?: boolean;
   className?: string;
+  size?: ModalSize;
 }) {
   const isVisible = open ?? isOpen ?? false;
   const panelRef = React.useRef<HTMLDivElement>(null);
@@ -112,7 +126,7 @@ export function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 24 }}
             transition={SPRING_SHEET}
-            className={`relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-edge bg-background p-6 shadow-lift ${className}`}
+            className={`relative w-full ${MODAL_SIZES[size] || "max-w-md"} max-h-[92vh] overflow-y-auto rounded-3xl border border-edge bg-background/95 backdrop-blur-xl p-6 sm:p-8 shadow-lift ${className}`}
           >
             <div className="mb-6 flex items-center justify-between gap-4">
               <h3

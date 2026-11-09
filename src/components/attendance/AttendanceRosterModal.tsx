@@ -174,14 +174,14 @@ export function AttendanceRosterModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-md">
       <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.96 }}
-        className="card-outer w-full max-w-3xl max-h-[90vh] flex flex-col"
+        initial={{ opacity: 0, scale: 0.94, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.94, y: 16 }}
+        className="card-outer w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl shadow-lift"
       >
-        <div className="card-inner flex flex-col p-6 overflow-hidden">
+        <div className="card-inner flex flex-col p-6 sm:p-7 overflow-hidden rounded-3xl">
           {/* Header */}
           <div className="flex items-start justify-between border-b border-edge/60 pb-4">
             <div>

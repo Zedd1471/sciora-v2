@@ -2316,7 +2316,7 @@ export default function AdminDashboard() {
           open={isResultsModalOpen}
           onClose={() => setIsResultsModalOpen(false)}
           title={`Results & Item Analysis: ${resultsTestTitle}`}
-          className="max-w-4xl sm:max-w-4xl"
+          size="2xl"
         >
           {isLoadingResults ? (
             <div className="py-12 text-center text-sm font-medium text-muted">

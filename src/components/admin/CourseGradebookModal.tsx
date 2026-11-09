@@ -11,12 +11,13 @@ import {
   AlertTriangle,
   XCircle,
   Sliders,
-  Award,
   CalendarCheck,
-  TrendingUp,
   ShieldAlert,
   Loader2,
   RefreshCw,
+  X,
+  GraduationCap,
+  Percent,
 } from "lucide-react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -67,6 +68,8 @@ type Props = {
     materials?: any[];
   };
 };
+
+const PRESET_THRESHOLDS = [50, 60, 70, 75, 80, 85];
 
 export function CourseGradebookModal({ isOpen, onClose, course }: Props) {
   const toast = useToast();
@@ -354,7 +357,6 @@ export function CourseGradebookModal({ isOpen, onClose, course }: Props) {
         return s.attendanceCount === 0;
       }
       if (activeFilter === "anomaly") {
-        // High score or test completed but zero attendance
         return s.attendanceCount === 0 && Object.keys(s.testScores).length > 0;
       }
       if (activeFilter === "flagged") {
@@ -455,110 +457,197 @@ export function CourseGradebookModal({ isOpen, onClose, course }: Props) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Master Gradebook: ${course.code}`}
-      className="max-w-5xl"
+      title=""
+      size="3xl"
     >
-      <div className="space-y-6">
-        <p className="-mt-3 text-xs sm:text-sm text-muted">
-          Unified test scores, lecture attendance, eligibility filtering, and AI performance synthesis for {course.title}.
-        </p>
-        {/* TOP SUMMARY STATS */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="glass rounded-2xl border border-edge p-4">
-            <span className="text-xs font-medium text-muted">Total Students</span>
-            <p className="mt-1 font-mono text-2xl font-bold text-foreground">
+      <div className="space-y-7 -mt-2">
+        {/* HEADER */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-edge/60 pb-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent text-accent-fg shadow-card">
+              <GraduationCap className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs font-bold uppercase tracking-wider text-accent bg-accent-soft px-2.5 py-0.5 rounded-lg border border-accent/20">
+                  {course.code}
+                </span>
+                <span className="text-xs text-muted font-medium">Master Ledger</span>
+              </div>
+              <h2 className="text-2xl font-bold tracking-tight text-foreground mt-0.5">
+                Course Gradebook &amp; Attendance
+              </h2>
+            </div>
+          </div>
+          <p className="text-xs text-muted max-w-sm sm:text-right font-medium">
+            Unified test scores, classroom attendance, eligibility filtering, and AI synthesis for{" "}
+            <span className="text-foreground font-semibold">{course.title}</span>.
+          </p>
+        </div>
+
+        {/* TOP SUMMARY STATS — APPLE BENTO GRID */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {/* Total Students */}
+          <div className="glass group relative overflow-hidden rounded-3xl p-5 border border-edge transition-all hover:border-accent/40 hover:shadow-card">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+                Assessed Students
+              </span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-soft text-accent">
+                <Users className="h-4 w-4" />
+              </div>
+            </div>
+            <p className="mt-3 font-mono text-3xl font-bold tracking-tight text-foreground tabular-nums">
               {loading ? "—" : students.length}
             </p>
+            <p className="mt-1 text-[11px] text-muted">Total enrolled in cohort</p>
           </div>
-          <div className="glass rounded-2xl border border-edge p-4">
-            <span className="text-xs font-medium text-muted">Lectures Conducted</span>
-            <p className="mt-1 font-mono text-2xl font-bold text-foreground">
+
+          {/* Lectures Conducted */}
+          <div className="glass group relative overflow-hidden rounded-3xl p-5 border border-edge transition-all hover:border-indigo-500/40 hover:shadow-card">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+                Class Lectures
+              </span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500">
+                <CalendarCheck className="h-4 w-4" />
+              </div>
+            </div>
+            <p className="mt-3 font-mono text-3xl font-bold tracking-tight text-foreground tabular-nums">
               {loading ? "—" : totalSessionsCount}
             </p>
+            <p className="mt-1 text-[11px] text-muted">Physical sessions conducted</p>
           </div>
-          <div className="glass rounded-2xl border border-edge p-4">
-            <span className="text-xs font-medium text-emerald-500">Eligible for Exam</span>
-            <p className="mt-1 font-mono text-2xl font-bold text-emerald-500">
-              {loading ? "—" : counts.eligible}
-            </p>
+
+          {/* Exam Qualified */}
+          <div className="glass group relative overflow-hidden rounded-3xl p-5 border border-edge transition-all hover:border-emerald-500/40 hover:shadow-card">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                Cleared for Exam
+              </span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-4 w-4" />
+              </div>
+            </div>
+            <div className="mt-3 flex items-baseline gap-2">
+              <p className="font-mono text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
+                {loading ? "—" : counts.eligible}
+              </p>
+              {!loading && students.length > 0 && (
+                <span className="text-xs font-mono font-semibold text-emerald-600/80 dark:text-emerald-400/80">
+                  ({Math.round((counts.eligible / students.length) * 100)}%)
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-[11px] text-muted">Met &ge; {attendanceThreshold}% requirement</p>
           </div>
-          <div className="glass rounded-2xl border border-edge p-4">
-            <span className="text-xs font-medium text-rose-500">Below Threshold</span>
-            <p className="mt-1 font-mono text-2xl font-bold text-rose-500">
-              {loading ? "—" : counts.below}
-            </p>
+
+          {/* Below Threshold */}
+          <div className="glass group relative overflow-hidden rounded-3xl p-5 border border-edge transition-all hover:border-rose-500/40 hover:shadow-card">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-rose-500">
+                Barred / Deficient
+              </span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/15 text-rose-500">
+                <AlertTriangle className="h-4 w-4" />
+              </div>
+            </div>
+            <div className="mt-3 flex items-baseline gap-2">
+              <p className="font-mono text-3xl font-bold tracking-tight text-rose-500 tabular-nums">
+                {loading ? "—" : counts.below}
+              </p>
+              {!loading && students.length > 0 && (
+                <span className="text-xs font-mono font-semibold text-rose-500/80">
+                  ({Math.round((counts.below / students.length) * 100)}%)
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-[11px] text-muted">&lt; {attendanceThreshold}% attendance</p>
           </div>
         </div>
 
-        {/* AI INSIGHTS CARD */}
+        {/* AI SYNTHESIS CARD (APPLE INTELLIGENCE STYLE) */}
         {aiResult ? (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-accent/30 bg-accent-soft/30 p-5 space-y-4"
+            className="relative overflow-hidden rounded-3xl border border-accent/40 bg-gradient-to-br from-accent/15 via-background to-accent/5 p-6 backdrop-blur-xl shadow-card space-y-4"
           >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 text-accent">
-                <Sparkles className="h-5 w-5" />
-                <h4 className="font-bold text-sm">AI Cohort Evaluation & Synthesis</h4>
+              <div className="flex items-center gap-2.5 text-accent font-bold">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white shadow-soft">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <h4 className="text-sm tracking-tight text-foreground font-bold">
+                  AI Cohort Performance &amp; Attendance Synthesis
+                </h4>
               </div>
-              <span className="text-[11px] font-mono text-muted">
-                Exam Threshold: {attendanceThreshold}%
+              <span className="font-mono text-xs font-semibold text-muted bg-black/5 dark:bg-white/10 px-3 py-1 rounded-full border border-edge">
+                Audited against {attendanceThreshold}% threshold
               </span>
             </div>
 
-            <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed font-sans">
+            <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed font-sans font-medium">
               {aiResult.correlationSummary}
             </p>
 
             {aiResult.recommendations && aiResult.recommendations.length > 0 && (
-              <div className="space-y-1.5 pt-1">
+              <div className="space-y-2 pt-2 border-t border-accent/20">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-muted">
                   Actionable Recommendations:
                 </span>
-                <ul className="space-y-1 text-xs text-muted-strong">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {aiResult.recommendations.map((rec, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="text-accent">•</span>
-                      <span>{rec}</span>
-                    </li>
+                    <div
+                      key={i}
+                      className="rounded-2xl border border-edge bg-background/60 p-3 text-xs text-muted-strong shadow-2xs"
+                    >
+                      <span className="font-bold text-accent mr-1.5 font-mono">0{i + 1}.</span>
+                      {rec}
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
 
             {aiResult.flaggedStudents && aiResult.flaggedStudents.length > 0 && (
-              <div className="pt-2 flex items-center justify-between border-t border-accent/20">
-                <div className="flex items-center gap-2 text-xs font-semibold text-rose-400">
+              <div className="pt-3 flex flex-wrap items-center justify-between gap-3 border-t border-accent/20">
+                <div className="flex items-center gap-2 text-xs font-semibold text-rose-500">
                   <ShieldAlert className="h-4 w-4" />
-                  <span>{aiResult.flaggedStudents.length} students flagged for review</span>
+                  <span>
+                    {aiResult.flaggedStudents.length} student{aiResult.flaggedStudents.length === 1 ? "" : "s"} flagged for attendance or proxy anomalies
+                  </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setActiveFilter("flagged")}
-                  className="text-xs font-bold text-accent hover:underline"
+                  className="rounded-full bg-rose-500/10 hover:bg-rose-500/20 px-3.5 py-1 text-xs font-bold text-rose-500 transition-colors border border-rose-500/25"
                 >
-                  View Flagged Students →
+                  Filter AI-Flagged Students &rarr;
                 </button>
               </div>
             )}
           </motion.div>
         ) : null}
 
-        {/* CONTROLS: SLIDER, FILTER BUTTONS, SEARCH, AND ACTIONS */}
-        <div className="glass rounded-2xl border border-edge p-4 space-y-4">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            {/* THRESHOLD SLIDER */}
-            <div className="flex-1 max-w-sm space-y-1.5">
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-semibold text-foreground flex items-center gap-1.5">
-                  <Sliders className="h-3.5 w-3.5 text-accent" />
-                  Attendance Exam Threshold:
-                </span>
-                <span className="font-mono font-bold text-accent bg-accent-soft px-2 py-0.5 rounded-md">
+        {/* APPLE-STYLE CONTROL STRIP: SLIDER, PRESETS & ACTIONS */}
+        <div className="glass rounded-3xl border border-edge p-6 space-y-5">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            {/* THRESHOLD SLIDER & PRESETS */}
+            <div className="flex-1 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Sliders className="h-4 w-4 text-accent" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    Exam Attendance Requirement:
+                  </span>
+                </div>
+                <span className="font-mono font-bold text-sm text-accent bg-accent-soft px-3 py-1 rounded-xl border border-accent/25">
                   {attendanceThreshold}%
                 </span>
               </div>
+
+              {/* Slider Input */}
               <input
                 type="range"
                 min="0"
@@ -566,32 +655,46 @@ export function CourseGradebookModal({ isOpen, onClose, course }: Props) {
                 step="5"
                 value={attendanceThreshold}
                 onChange={(e) => setAttendanceThreshold(Number(e.target.value))}
-                className="w-full accent-indigo-500 cursor-pointer h-1.5 bg-black/10 dark:bg-white/10 rounded-lg appearance-none"
+                className="w-full accent-indigo-500 cursor-pointer h-2 bg-black/10 dark:bg-white/10 rounded-lg appearance-none"
               />
-              <div className="flex justify-between text-[10px] text-muted font-mono">
-                <span>0% (All Pass)</span>
-                <span>50%</span>
-                <span>75% (Standard)</span>
-                <span>100%</span>
+
+              {/* Preset Snapping Buttons */}
+              <div className="flex items-center gap-2 flex-wrap pt-1">
+                <span className="text-[11px] font-medium text-muted">Quick Presets:</span>
+                {PRESET_THRESHOLDS.map((pct) => (
+                  <button
+                    key={pct}
+                    type="button"
+                    onClick={() => setAttendanceThreshold(pct)}
+                    className={`rounded-xl px-2.5 py-1 text-xs font-mono font-semibold transition-all ${
+                      attendanceThreshold === pct
+                        ? "bg-accent text-white shadow-soft"
+                        : "bg-black/5 dark:bg-white/5 text-muted hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10 border border-edge"
+                    }`}
+                  >
+                    {pct}% {pct === 75 ? "(Standard)" : ""}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* ACTION BUTTONS: RUN AI & EXPORT CSV */}
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* ACTION BUTTONS */}
+            <div className="flex items-center gap-3 flex-wrap lg:self-center">
               <Button
                 variant="primary"
                 icon={Sparkles}
                 loading={isAnalyzing}
                 onClick={handleRunAiAnalysis}
-                className="shadow-soft"
+                className="shadow-card hover:shadow-float font-semibold px-5"
               >
-                {aiResult ? "Re-Run AI Analysis" : "Run AI Correlation"}
+                {aiResult ? "Re-Run AI Synthesis" : "Run AI Gradebook Synthesis"}
               </Button>
               <Button
                 variant="glass"
                 icon={Download}
                 onClick={handleExportCsv}
                 disabled={students.length === 0}
+                className="font-semibold"
               >
                 Export CSV
               </Button>
@@ -604,103 +707,115 @@ export function CourseGradebookModal({ isOpen, onClose, course }: Props) {
             </div>
           </div>
 
-          {/* FILTER PILLS */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-2 scrollbar-none">
-            <button
-              type="button"
-              onClick={() => setActiveFilter("all")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                activeFilter === "all"
-                  ? "bg-accent text-white shadow-soft"
-                  : "bg-black/5 dark:bg-white/5 text-muted hover:text-foreground"
-              }`}
-            >
-              All ({counts.all})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveFilter("eligible")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                activeFilter === "eligible"
-                  ? "bg-emerald-600 text-white shadow-soft"
-                  : "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
-              }`}
-            >
-              Eligible ≥{attendanceThreshold}% ({counts.eligible})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveFilter("below")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                activeFilter === "below"
-                  ? "bg-rose-600 text-white shadow-soft"
-                  : "bg-rose-500/10 text-rose-500 hover:bg-rose-500/20"
-              }`}
-            >
-              Below Threshold ({counts.below})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveFilter("zero")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                activeFilter === "zero"
-                  ? "bg-amber-600 text-white shadow-soft"
-                  : "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20"
-              }`}
-            >
-              Zero Attendance ({counts.zero})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveFilter("anomaly")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                activeFilter === "anomaly"
-                  ? "bg-purple-600 text-white shadow-soft"
-                  : "bg-purple-500/10 text-purple-400 hover:bg-purple-500/20"
-              }`}
-            >
-              Tested with 0% Attendance ({counts.anomaly})
-            </button>
-            {aiResult && (
+          {/* FILTER SEGMENTED CONTROLS & SEARCH */}
+          <div className="flex flex-col gap-3 pt-3 border-t border-edge/60 md:flex-row md:items-center md:justify-between">
+            {/* Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
               <button
                 type="button"
-                onClick={() => setActiveFilter("flagged")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                  activeFilter === "flagged"
-                    ? "bg-rose-600 text-white shadow-soft"
-                    : "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"
+                onClick={() => setActiveFilter("all")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                  activeFilter === "all"
+                    ? "bg-accent text-white shadow-soft"
+                    : "bg-black/5 dark:bg-white/5 text-muted hover:text-foreground border border-edge"
                 }`}
               >
-                AI Flagged ({counts.flagged})
+                All ({counts.all})
               </button>
-            )}
-          </div>
+              <button
+                type="button"
+                onClick={() => setActiveFilter("eligible")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                  activeFilter === "eligible"
+                    ? "bg-emerald-600 text-white shadow-soft"
+                    : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20"
+                }`}
+              >
+                Eligible &ge;{attendanceThreshold}% ({counts.eligible})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveFilter("below")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                  activeFilter === "below"
+                    ? "bg-rose-600 text-white shadow-soft"
+                    : "bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 border border-rose-500/20"
+                }`}
+              >
+                Below Threshold ({counts.below})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveFilter("zero")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                  activeFilter === "zero"
+                    ? "bg-amber-600 text-white shadow-soft"
+                    : "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border border-amber-500/20"
+                }`}
+              >
+                Zero Attendance ({counts.zero})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveFilter("anomaly")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                  activeFilter === "anomaly"
+                    ? "bg-purple-600 text-white shadow-soft"
+                    : "bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 border border-purple-500/20"
+                }`}
+              >
+                Score with 0% Attendance ({counts.anomaly})
+              </button>
+              {aiResult && (
+                <button
+                  type="button"
+                  onClick={() => setActiveFilter("flagged")}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                    activeFilter === "flagged"
+                      ? "bg-rose-600 text-white shadow-soft"
+                      : "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20"
+                  }`}
+                >
+                  AI Flagged ({counts.flagged})
+                </button>
+              )}
+            </div>
 
-          {/* SEARCH INPUT */}
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by Student ID or Name..."
-              className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm rounded-xl border border-edge bg-background/50 text-foreground placeholder:text-muted focus:outline-none focus:border-accent"
-            />
+            {/* Search Input */}
+            <div className="relative min-w-[260px]">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Filter by Student ID or Name..."
+                className="w-full pl-10 pr-9 py-2 text-xs sm:text-sm rounded-xl border border-edge bg-background/50 text-foreground placeholder:text-muted focus:outline-none focus:border-accent"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* GRADEBOOK TABLE */}
-        <div className="overflow-hidden rounded-2xl border border-edge glass">
-          <div className="overflow-x-auto max-h-[500px]">
-            <table className="w-full text-left border-collapse text-xs">
+        {/* GRADEBOOK TABLE CONTAINER */}
+        <div className="overflow-hidden rounded-3xl border border-edge glass shadow-card">
+          <div className="overflow-x-auto max-h-[520px]">
+            <table className="w-full text-left border-collapse text-xs sm:text-sm">
               <thead className="sticky top-0 bg-background/95 backdrop-blur-md border-b border-edge z-10 text-muted uppercase tracking-wider font-semibold text-[11px]">
                 <tr>
-                  <th className="p-3.5">Student ID</th>
-                  <th className="p-3.5">Grand Total Score</th>
-                  <th className="p-3.5">Attendance</th>
-                  <th className="p-3.5">Exam Status</th>
-                  {courseTests.slice(0, 3).map((t) => (
-                    <th key={t.id} className="p-3.5 truncate max-w-[120px]">
+                  <th className="py-4 px-5">Student</th>
+                  <th className="py-4 px-5">Grand Total Score</th>
+                  <th className="py-4 px-5 min-w-[170px]">Attendance Record</th>
+                  <th className="py-4 px-5">Exam Status</th>
+                  {courseTests.map((t) => (
+                    <th key={t.id} className="py-4 px-5 truncate max-w-[140px]">
                       {t.title}
                     </th>
                   ))}
@@ -709,17 +824,22 @@ export function CourseGradebookModal({ isOpen, onClose, course }: Props) {
               <tbody className="divide-y divide-edge">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-muted">
-                      <div className="flex items-center justify-center gap-2">
-                        <Loader2 className="h-5 w-5 animate-spin text-accent" />
-                        Compiling master gradebook and attendance records...
+                    <td colSpan={4 + courseTests.length} className="py-16 text-center text-muted">
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <Loader2 className="h-6 w-6 animate-spin text-accent" />
+                        <span className="text-sm font-medium">
+                          Compiling all course scores and physical attendance records...
+                        </span>
                       </div>
                     </td>
                   </tr>
                 ) : filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-muted">
-                      No student records matched your filter criteria.
+                    <td colSpan={4 + courseTests.length} className="py-16 text-center text-muted">
+                      <p className="text-base font-semibold text-foreground">No students found</p>
+                      <p className="text-xs text-muted mt-1">
+                        Try adjusting your search query or attendance filter criteria above.
+                      </p>
                     </td>
                   </tr>
                 ) : (
@@ -736,20 +856,22 @@ export function CourseGradebookModal({ isOpen, onClose, course }: Props) {
                         }`}
                       >
                         {/* Student ID & Name */}
-                        <td className="p-3.5">
-                          <div className="flex items-center gap-2">
+                        <td className="py-4 px-5">
+                          <div className="flex items-center gap-2.5">
                             <div>
-                              <p className="font-mono font-bold text-foreground">
+                              <p className="font-mono font-bold text-foreground text-sm tracking-wide">
                                 {st.studentId}
                               </p>
                               {st.studentName && (
-                                <p className="text-[11px] text-muted">{st.studentName}</p>
+                                <p className="text-xs text-muted font-medium mt-0.5">
+                                  {st.studentName}
+                                </p>
                               )}
                             </div>
                             {isGhost && (
                               <span
-                                title="Taken tests but 0% classroom presence"
-                                className="inline-flex rounded-full bg-amber-500/15 p-1 text-amber-500"
+                                title="Warning: Completed tests but 0 physical lecture attendances recorded"
+                                className="inline-flex rounded-full bg-amber-500/15 p-1 text-amber-500 border border-amber-500/30"
                               >
                                 <AlertTriangle className="h-3.5 w-3.5" />
                               </span>
@@ -758,41 +880,45 @@ export function CourseGradebookModal({ isOpen, onClose, course }: Props) {
                         </td>
 
                         {/* Grand Total */}
-                        <td className="p-3.5">
+                        <td className="py-4 px-5">
                           {st.grandTotalMax > 0 ? (
                             <div>
-                              <div className="flex items-center gap-1.5 font-bold text-foreground">
-                                <span>{st.grandTotalScore}</span>
-                                <span className="text-muted font-normal">/ {st.grandTotalMax}</span>
-                                <span className="font-mono text-accent ml-1">
-                                  ({st.grandTotalPct}%)
+                              <div className="flex items-baseline gap-1.5 font-bold text-foreground font-mono">
+                                <span className="text-base">{st.grandTotalScore}</span>
+                                <span className="text-xs text-muted font-normal">/ {st.grandTotalMax}</span>
+                                <span className="ml-1 rounded-md bg-accent-soft px-2 py-0.5 text-xs font-bold text-accent">
+                                  {st.grandTotalPct}%
                                 </span>
                               </div>
                             </div>
                           ) : (
-                            <span className="text-muted font-mono">—</span>
+                            <span className="text-muted font-mono text-xs">—</span>
                           )}
                         </td>
 
                         {/* Attendance Meter */}
-                        <td className="p-3.5 min-w-[140px]">
+                        <td className="py-4 px-5 min-w-[170px]">
                           <div>
-                            <div className="flex justify-between items-center text-[11px] mb-1">
-                              <span className="font-bold font-mono">
-                                {st.attendanceCount} / {totalSessionsCount}
+                            <div className="flex justify-between items-center text-xs mb-1.5 font-mono">
+                              <span className="font-semibold text-foreground">
+                                {st.attendanceCount} of {totalSessionsCount} lectures
                               </span>
                               <span
-                                className={`font-mono font-bold ${
-                                  isEligible ? "text-emerald-500" : "text-rose-500"
+                                className={`font-bold ${
+                                  isEligible
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : "text-rose-500"
                                 }`}
                               >
                                 {st.attendancePct}%
                               </span>
                             </div>
-                            <div className="h-1.5 w-full rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                            <div className="h-2 w-full rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
                               <div
-                                className={`h-full rounded-full transition-all ${
-                                  isEligible ? "bg-emerald-500" : "bg-rose-500"
+                                className={`h-full rounded-full transition-all duration-300 ${
+                                  isEligible
+                                    ? "bg-emerald-500"
+                                    : "bg-rose-500"
                                 }`}
                                 style={{ width: `${Math.min(100, st.attendancePct)}%` }}
                               />
@@ -801,31 +927,31 @@ export function CourseGradebookModal({ isOpen, onClose, course }: Props) {
                         </td>
 
                         {/* Eligibility Badge */}
-                        <td className="p-3.5">
+                        <td className="py-4 px-5">
                           {isEligible ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-bold text-emerald-500">
-                              <CheckCircle2 className="h-3 w-3" />
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
                               Cleared
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2.5 py-0.5 text-[11px] font-bold text-rose-500">
-                              <XCircle className="h-3 w-3" />
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 border border-rose-500/30 px-3 py-1 text-xs font-semibold text-rose-500">
+                              <XCircle className="h-3.5 w-3.5" />
                               Barred (&lt;{attendanceThreshold}%)
                             </span>
                           )}
                         </td>
 
                         {/* Individual Test Scores */}
-                        {courseTests.slice(0, 3).map((t) => {
+                        {courseTests.map((t) => {
                           const sc = st.testScores[t.id];
                           return (
-                            <td key={t.id} className="p-3.5 font-mono">
+                            <td key={t.id} className="py-4 px-5 font-mono">
                               {sc ? (
-                                <span className="font-semibold text-foreground">
-                                  {sc.score}/{sc.max}
+                                <span className="inline-block rounded-lg bg-black/5 dark:bg-white/5 border border-edge px-2.5 py-1 text-xs font-semibold text-foreground">
+                                  {sc.score} / {sc.max}
                                 </span>
                               ) : (
-                                <span className="text-muted">—</span>
+                                <span className="text-muted text-xs">—</span>
                               )}
                             </td>
                           );
@@ -861,7 +987,7 @@ function IconButton({
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
-      className="flex h-9 w-9 items-center justify-center rounded-xl border border-edge bg-black/5 dark:bg-white/5 text-muted hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10 transition-colors disabled:opacity-40"
+      className="flex h-10 w-10 items-center justify-center rounded-2xl border border-edge bg-black/5 dark:bg-white/5 text-muted hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10 transition-colors disabled:opacity-40 shadow-2xs"
     >
       <Icon className="h-4 w-4" />
     </button>
