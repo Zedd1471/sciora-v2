@@ -1197,12 +1197,11 @@ export default function AdminDashboard() {
                 variant="glass"
                 icon={QrCode}
                 onClick={() => {
-                  localStorage.removeItem("sciora_admin_totp_secret");
                   router.push("/admin/login");
                 }}
-                aria-label="Set up a new authenticator device"
+                aria-label="Pair or reconfigure authenticator device"
               >
-                Setup 2FA
+                Authenticator
               </Button>
               <Button
                 variant="glass"
