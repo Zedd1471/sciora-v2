@@ -1241,13 +1241,19 @@ export default function AdminDashboard() {
                     onClick={() => setDashboardSection("courses")}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                       dashboardSection === "courses"
-                        ? "bg-white dark:bg-surface text-foreground shadow-sm"
+                        ? "bg-white text-zinc-950 shadow-sm font-bold"
                         : "text-muted hover:text-foreground"
                     }`}
                   >
                     <BookOpenCheck className="h-4 w-4" />
                     Courses
-                    <span className="ml-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-mono text-accent">
+                    <span
+                      className={`ml-1 rounded-full px-2 py-0.5 text-xs font-mono font-bold ${
+                        dashboardSection === "courses"
+                          ? "bg-zinc-900/10 text-zinc-950"
+                          : "bg-accent/10 text-accent"
+                      }`}
+                    >
                       {courses.length}
                     </span>
                   </button>
@@ -1257,14 +1263,20 @@ export default function AdminDashboard() {
                     onClick={() => setDashboardSection("supervision")}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                       dashboardSection === "supervision"
-                        ? "bg-white dark:bg-surface text-foreground shadow-sm"
+                        ? "bg-white text-zinc-950 shadow-sm font-bold"
                         : "text-muted hover:text-foreground"
                     }`}
                   >
                     <Users className="h-4 w-4" />
                     Supervision
                     {supervisionMetrics.totalStudents > 0 && (
-                      <span className="ml-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-mono text-accent">
+                      <span
+                        className={`ml-1 rounded-full px-2 py-0.5 text-xs font-mono font-bold ${
+                          dashboardSection === "supervision"
+                            ? "bg-zinc-900/10 text-zinc-950"
+                            : "bg-accent/10 text-accent"
+                        }`}
+                      >
                         {supervisionMetrics.totalStudents}
                       </span>
                     )}
