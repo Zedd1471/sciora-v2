@@ -109,6 +109,14 @@ export function getOfflineRecords(sessionId: string): OfflineAttendanceRecord[] 
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }
 
+export function getOfflineRecordsByStudent(studentId: string): OfflineAttendanceRecord[] {
+  const data = ensureStoreFile();
+  const cleanId = studentId.trim().toUpperCase();
+  return data.records
+    .filter((r) => r.studentId.trim().toUpperCase() === cleanId)
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+}
+
 /**
  * Saves an attendance record with single-device enforcement (anti-proxy).
  */

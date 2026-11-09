@@ -10,6 +10,7 @@ import {
   ShieldAlert,
   Loader2,
   BookOpen,
+  Wifi,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -285,24 +286,15 @@ function AttendanceCheckInContent() {
               )}
             </div>
 
-            <div className="pt-2 flex flex-col gap-2.5">
-              <Link
-                href="/notes"
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 px-4 text-sm transition-colors"
-              >
-                <BookOpen className="h-4 w-4" />
-                View Course Notes
-              </Link>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setResult(null);
-                }}
-                className="w-full rounded-xl border border-zinc-800 bg-zinc-800/40 hover:bg-zinc-800 text-zinc-300 font-medium py-2.5 px-4 text-xs transition-colors"
-              >
-                Check In Another Student
-              </button>
+            {/* Disconnect Hotspot Instruction Card */}
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-center text-xs text-amber-200 space-y-1.5">
+              <p className="font-bold text-sm text-amber-300 flex items-center justify-center gap-1.5">
+                <Wifi className="h-4 w-4 text-amber-400" />
+                Please Disconnect from Wi-Fi Now
+              </p>
+              <p className="text-xs text-amber-300/85 leading-relaxed">
+                Your attendance has been permanently recorded. Please turn off Wi-Fi or disconnect from the lecturer&apos;s hotspot to free up slots for other students.
+              </p>
             </div>
           </div>
         ) : (

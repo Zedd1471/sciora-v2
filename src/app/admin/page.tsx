@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { AttendanceProjectorModal } from "@/components/attendance/AttendanceProjectorModal";
 import { AttendanceRosterModal } from "@/components/attendance/AttendanceRosterModal";
+import { CourseGradebookModal } from "@/components/admin/CourseGradebookModal";
 import {
   type AttendanceSession,
   exportAttendanceToCsv,
@@ -132,6 +133,7 @@ export default function AdminDashboard() {
   const [isAllAttendanceModalOpen, setIsAllAttendanceModalOpen] = useState(false);
   const [selectedCourseForNewAttendance, setSelectedCourseForNewAttendance] = useState<string>("");
   const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+  const [isGradebookOpen, setIsGradebookOpen] = useState(false);
 
   const toast = useToast();
   const router = useRouter();
@@ -1313,9 +1315,17 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Button
                     variant="primary"
+                    icon={BookOpenCheck}
+                    onClick={() => setIsGradebookOpen(true)}
+                    className="shadow-soft"
+                  >
+                    All-in-One Gradebook
+                  </Button>
+                  <Button
+                    variant="subtle"
                     icon={QrCode}
                     onClick={() => {
                       setNewAttendanceTopic(`Lecture ${courseAttendanceSessions.length + 1}`);
@@ -2786,6 +2796,15 @@ export default function AdminDashboard() {
               setRosterAttendanceSession(null);
               setActiveAttendanceSession(sess);
             }}
+          />
+        )}
+
+        {/* ALL-IN-ONE COURSE GRADEBOOK & ATTENDANCE MODAL */}
+        {selectedCourse && (
+          <CourseGradebookModal
+            isOpen={isGradebookOpen}
+            onClose={() => setIsGradebookOpen(false)}
+            course={selectedCourse}
           />
         )}
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   getOfflineRecords,
+  getOfflineRecordsByStudent,
   deleteOfflineRecord,
   getOfflineSession,
 } from "@/lib/attendance-offline-store";
@@ -9,9 +10,19 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get("sessionId");
+    const studentId = searchParams.get("studentId");
+
+    if (studentId) {
+      const records = getOfflineRecordsByStudent(studentId);
+      return NextResponse.json({
+        success: true,
+        records,
+        count: records.length,
+      });
+    }
 
     if (!sessionId) {
-      return NextResponse.json({ error: "Session ID is required." }, { status: 400 });
+      return NextResponse.json({ error: "Session ID or Student ID is required." }, { status: 400 });
     }
 
     const records = getOfflineRecords(sessionId);
