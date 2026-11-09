@@ -11,6 +11,7 @@ import {
   Loader2,
   BookOpen,
   Wifi,
+  QrCode,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -319,52 +320,15 @@ function AttendanceCheckInContent() {
                   </div>
                   <p className="font-semibold text-sm text-white mt-0.5">{session.title}</p>
                 </div>
-                {activeSessions.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSession(null);
-                      setSessionId("");
-                    }}
-                    className="text-[11px] text-zinc-400 hover:text-white underline shrink-0 ml-2"
-                  >
-                    Change
-                  </button>
-                )}
-              </div>
-            ) : activeSessions.length > 0 ? (
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                  Select Active Class:
-                </label>
-                <div className="space-y-1.5">
-                  {activeSessions.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => {
-                        setSessionId(s.id);
-                        setSession(s);
-                      }}
-                      className="w-full text-left rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 hover:border-indigo-500 hover:bg-indigo-950/20 transition-all flex items-center justify-between"
-                    >
-                      <div>
-                        <span className="font-mono text-xs font-bold text-indigo-400">
-                          {s.courseCode}
-                        </span>
-                        <p className="font-semibold text-xs text-white mt-0.5">{s.title}</p>
-                      </div>
-                      <span className="text-[11px] text-zinc-500">Select →</span>
-                    </button>
-                  ))}
-                </div>
               </div>
             ) : (
-              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-center text-xs text-amber-200">
-                <Clock className="h-5 w-5 mx-auto mb-1 text-amber-400" />
-                <p className="font-semibold">Waiting for Lecturer to Start</p>
-                <p className="text-[11px] text-amber-300/80 mt-1">
-                  Once the lecturer starts the session on their computer, this form will connect automatically.
+              <div className="rounded-xl border border-indigo-500/30 bg-indigo-950/20 p-5 text-center text-xs space-y-2">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-400">
+                  <QrCode className="h-6 w-6" />
+                </div>
+                <h3 className="text-sm font-bold text-white">Scan Classroom QR Code</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed max-w-xs mx-auto">
+                  Attendance check-in is strictly restricted to scanning the live QR code projected in class. Please point your camera at the screen to check in.
                 </p>
               </div>
             )}
