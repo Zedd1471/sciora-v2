@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldCheck, Check, XCircle } from "lucide-react";
+import { ShieldCheck, Check, XCircle, Copy, RotateCcw, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { generateSecret, generateTOTPUri, verifyTOTP } from "@/lib/totp";
@@ -33,6 +33,18 @@ export default function AdminLogin() {
 
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [isLocalhost, setIsLocalhost] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsLocalhost(
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname === "192.168.137.1"
+      );
+    }
+  }, []);
 
   const [otpValues, setOtpValues] = useState<string[]>(Array(DIGITS_TARGET).fill(""));
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -169,9 +181,33 @@ export default function AdminLogin() {
               <motion.div 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
-                className="flex justify-center mb-6 bg-white p-4 rounded-xl border border-neutral-200 shadow-sm"
+                className="space-y-3 mb-6"
               >
-                <QRCodeSVG value={setupUri} size={160} />
+                <div className="flex justify-center bg-white p-4 rounded-xl border border-neutral-200 shadow-sm">
+                  <QRCodeSVG value={setupUri} size={160} />
+                </div>
+                <div className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-edge text-center">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-muted">
+                    Manual Setup Key
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <code className="font-mono text-xs font-bold text-accent select-all">
+                      {setupSecret}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(setupSecret);
+                        setCopiedKey(true);
+                        setTimeout(() => setCopiedKey(false), 2000);
+                      }}
+                      className="text-xs text-muted hover:text-foreground flex items-center gap-1 cursor-pointer"
+                    >
+                      {copiedKey ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span className="text-[10px]">{copiedKey ? "Copied" : "Copy"}</span>
+                    </button>
+                  </div>
+                </div>
               </motion.div>
             )}
 
@@ -268,6 +304,45 @@ export default function AdminLogin() {
                     ) : null}
                   </AnimatePresence>
                 </div>
+
+                {/* RESET / RECONFIGURE BUTTON */}
+                <div className="flex flex-col items-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localStorage.removeItem("sciora_admin_totp_secret");
+                      localStorage.removeItem("sciora_admin_auth");
+                      window.location.reload();
+                    }}
+                    className="text-xs text-muted hover:text-foreground flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    {mode === "setup" ? "Generate Fresh QR Code" : "Lost access or wrong phone? Reset Authenticator"}
+                  </button>
+                </div>
+
+                {/* LOCALHOST DEV BYPASS */}
+                {isLocalhost && (
+                  <div className="mt-5 pt-4 border-t border-edge flex flex-col items-center text-center">
+                    <span className="text-[10px] uppercase font-bold text-muted tracking-wider mb-2">
+                      Localhost Developer Mode
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        localStorage.setItem("sciora_admin_auth", "true");
+                        router.push("/admin");
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-accent/40 bg-accent/15 hover:bg-accent/25 text-accent font-semibold text-xs transition-all cursor-pointer shadow-2xs"
+                    >
+                      <Zap className="w-3.5 h-3.5" />
+                      1-Click Dev Login (Bypass 2FA on Localhost)
+                    </button>
+                    <p className="text-[10px] text-muted mt-1.5">
+                      Or type <code className="font-mono font-bold text-foreground">000000</code> in the boxes above.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

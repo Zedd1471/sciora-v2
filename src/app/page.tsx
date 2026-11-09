@@ -1,15 +1,30 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, BookOpen } from "lucide-react";
+import { ArrowRight, BookOpen, CalendarCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { containerVariants, itemVariants, SPRING_MICRO } from "@/lib/motion";
 
 export default function Home() {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
+
+  // If accessed over local hotspot IP (e.g. 192.168.100.175), immediately route students to the attendance form
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      if (
+        host.startsWith("192.168.") ||
+        host.startsWith("10.") ||
+        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host) ||
+        (/^(\d{1,3}\.){3}\d{1,3}$/.test(host) && host !== "127.0.0.1")
+      ) {
+        window.location.replace("/attendance" + window.location.search);
+      }
+    }
+  }, []);
 
   const handleEnterClassroom = () => {
     if (isNavigating) return;
@@ -58,6 +73,17 @@ export default function Home() {
                 <ArrowRight className="h-4 w-4" />
               </span>
             )}
+          </Button>
+
+          <Button
+            size="lg"
+            variant="glass"
+            onClick={() => router.push("/attendance")}
+            aria-label="Attendance check-in"
+            className="group rounded-full px-8"
+          >
+            <CalendarCheck className="h-5 w-5 text-accent" aria-hidden="true" />
+            Lecture Attendance
           </Button>
         </motion.div>
       </motion.div>

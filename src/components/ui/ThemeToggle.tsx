@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useMounted } from "@/lib/useMounted";
 import "./CurtainToggle.css";
 
 export function ThemeToggle() {
+  const pathname = usePathname();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const mounted = useMounted();
   const [isShutterActive, setIsShutterActive] = React.useState(false);
@@ -20,7 +22,7 @@ export function ThemeToggle() {
     };
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted || pathname?.startsWith("/attendance")) return null;
 
   const isDark =
     resolvedTheme === "dark" ||
