@@ -17,7 +17,7 @@ import {
   PlayCircle,
   FolderOpen,
   Eye, AlertTriangle, Users, BookOpenCheck, CheckCircle2,
-  BarChart3, TrendingUp, Check, Search,
+  BarChart3, TrendingUp, Check, Search, ArrowRight,
   CalendarCheck, Radio, Sparkles, CloudUpload, Wifi,
 } from "lucide-react";
 import { AttendanceProjectorModal } from "@/components/attendance/AttendanceProjectorModal";
@@ -122,7 +122,7 @@ export default function AdminDashboard() {
   const [isLoadingBlocks, setIsLoadingBlocks] = useState(false);
   const [blocksTestTitle, setBlocksTestTitle] = useState("");
 
-  // Attendance State
+  // Attendance State (strictly managed inside courses)
   const [attendanceSessions, setAttendanceSessions] = useState<AttendanceSession[]>([]);
   const [activeAttendanceSession, setActiveAttendanceSession] = useState<AttendanceSession | null>(null);
   const [rosterAttendanceSession, setRosterAttendanceSession] = useState<AttendanceSession | null>(null);
@@ -130,13 +130,47 @@ export default function AdminDashboard() {
   const [newAttendanceTopic, setNewAttendanceTopic] = useState("");
   const [isCreatingAttendance, setIsCreatingAttendance] = useState(false);
   const [courseTab, setCourseTab] = useState<"content" | "attendance">("content");
-  const [isAllAttendanceModalOpen, setIsAllAttendanceModalOpen] = useState(false);
   const [selectedCourseForNewAttendance, setSelectedCourseForNewAttendance] = useState<string>("");
   const [isSyncingCloud, setIsSyncingCloud] = useState(false);
   const [isGradebookOpen, setIsGradebookOpen] = useState(false);
 
+  // Settings & Navigation State
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [dashboardSection, setDashboardSection] = useState<"courses" | "supervision">("courses");
+  const [supervisionStudents, setSupervisionStudents] = useState<any[]>([]);
+  const [supervisionMetrics, setSupervisionMetrics] = useState({
+    totalStudents: 0,
+    activeStudents: 0,
+    cohorts: [] as string[],
+    todaySubmissions: 0,
+  });
+  const [loadingSupervision, setLoadingSupervision] = useState(false);
+  const [supervisionSearch, setSupervisionSearch] = useState("");
+
   const toast = useToast();
   const router = useRouter();
+
+  // Load supervision metrics on mount
+  useEffect(() => {
+    const fetchSupervision = async () => {
+      setLoadingSupervision(true);
+      try {
+        const res = await fetch("/api/admin/students");
+        const data = await res.json();
+        if (res.ok) {
+          setSupervisionStudents(data.students || []);
+          setSupervisionMetrics(
+            data.metrics || { totalStudents: 0, activeStudents: 0, cohorts: [], todaySubmissions: 0 }
+          );
+        }
+      } catch (err) {
+        console.error("Failed to load supervision metrics:", err);
+      } finally {
+        setLoadingSupervision(false);
+      }
+    };
+    fetchSupervision();
+  }, []);
 
   useEffect(() => {
     // Background auto-cleanup of grades older than 3 months
@@ -226,6 +260,18 @@ export default function AdminDashboard() {
     if (!selectedCourseId) return [];
     return attendanceSessions.filter((s) => s.courseId === selectedCourseId);
   }, [attendanceSessions, selectedCourseId]);
+
+  const filteredSupervisionStudents = useMemo(() => {
+    if (!supervisionSearch.trim()) return supervisionStudents;
+    const q = supervisionSearch.toLowerCase();
+    return supervisionStudents.filter(
+      (s) =>
+        s.student_id?.toLowerCase().includes(q) ||
+        s.name?.toLowerCase().includes(q) ||
+        s.project_topic?.toLowerCase().includes(q) ||
+        s.academic_year?.toLowerCase().includes(q)
+    );
+  }, [supervisionStudents, supervisionSearch]);
 
   const handleCreateAttendance = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1172,126 +1218,316 @@ export default function AdminDashboard() {
           }
           title="Dashboard"
           actions={
-            <>
-              <Button
-                variant="glass"
-                icon={CalendarCheck}
-                onClick={() => setIsAllAttendanceModalOpen(true)}
-                aria-label="Manage Course Attendance Sessions"
-              >
-                Attendance
-                {attendanceSessions.some((s) => s.status === "active") && (
-                  <span className="h-2 w-2 rounded-full bg-success animate-ping ml-1" />
-                )}
-              </Button>
-              <Link href="/admin/students">
-                <Button
-                  variant="glass"
-                  icon={Users}
-                  aria-label="Manage project students directory and quotas"
-                >
-                  Project Students
-                </Button>
-              </Link>
-              <Button
-                variant="glass"
-                icon={QrCode}
-                onClick={() => {
-                  router.push("/admin/login");
-                }}
-                aria-label="Pair or reconfigure authenticator device"
-              >
-                Authenticator
-              </Button>
-              <Button
-                variant="glass"
-                icon={Shield}
-                className=""
-                onClick={() => {
-                  localStorage.removeItem("sciora_admin_auth");
-                  router.push("/");
-                }}
-                aria-label="Lock and exit admin dashboard"
-              >
-                Lock
-              </Button>
-            </>
+            <Button
+              variant="glass"
+              icon={Settings}
+              onClick={() => setIsSettingsModalOpen(true)}
+              aria-label="Admin Settings & Security"
+            >
+              Settings
+            </Button>
           }
         />
 
         <AnimatePresence mode="wait">
           {!selectedCourseId ? (
-            /* COURSE GRID VIEW */
-            <motion.div key="admin-course-grid" {...viewMotion}>
-              <div className="mb-6 flex items-center justify-between gap-4">
-                <h2 className="text-xl font-bold text-muted-strong">Your Courses</h2>
-                <Button icon={Plus} onClick={() => setIsAddCourseModalOpen(true)}>
-                  Add Course
-                </Button>
+            /* MAIN DASHBOARD: COURSES & SUPERVISION */
+            <motion.div key="admin-main-dashboard" {...viewMotion} className="space-y-6">
+              {/* SECTION SWITCHER */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-edge/60 pb-4">
+                <div className="inline-flex items-center gap-1 rounded-2xl bg-black/5 dark:bg-white/5 p-1 border border-edge">
+                  <button
+                    type="button"
+                    onClick={() => setDashboardSection("courses")}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                      dashboardSection === "courses"
+                        ? "bg-white dark:bg-surface text-foreground shadow-sm"
+                        : "text-muted hover:text-foreground"
+                    }`}
+                  >
+                    <BookOpenCheck className="h-4 w-4" />
+                    Courses
+                    <span className="ml-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-mono text-accent">
+                      {courses.length}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDashboardSection("supervision")}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                      dashboardSection === "supervision"
+                        ? "bg-white dark:bg-surface text-foreground shadow-sm"
+                        : "text-muted hover:text-foreground"
+                    }`}
+                  >
+                    <Users className="h-4 w-4" />
+                    Supervision
+                    {supervisionMetrics.totalStudents > 0 && (
+                      <span className="ml-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-mono text-accent">
+                        {supervisionMetrics.totalStudents}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {dashboardSection === "courses" ? (
+                  <Button icon={Plus} onClick={() => setIsAddCourseModalOpen(true)}>
+                    Add Course
+                  </Button>
+                ) : (
+                  <Link href="/admin/students">
+                    <Button icon={ArrowRight} variant="primary">
+                      Manage Supervision Roster
+                    </Button>
+                  </Link>
+                )}
               </div>
 
-              {loadError ? (
-                <ErrorState
-                  title="Courses couldn't be loaded"
-                  onRetry={() => {
-                    setLoadError(false);
-                    setLoading(true);
-                    setRetryKey((k) => k + 1);
-                  }}
-                />
-              ) : loading ? (
-                <div
-                  className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
-                  role="status"
-                  aria-label="Loading courses"
-                >
-                  <CourseSkeleton height={200} />
-                  <CourseSkeleton height={200} />
-                  <CourseSkeleton height={200} />
-                  <span className="sr-only">Loading courses...</span>
+              {dashboardSection === "courses" ? (
+                /* COURSES SECTION */
+                <div>
+                  <div className="mb-4 flex items-center justify-between gap-4">
+                    <h2 className="text-xl font-bold text-muted-strong">Your Courses</h2>
+                  </div>
+
+                  {loadError ? (
+                    <ErrorState
+                      title="Courses couldn't be loaded"
+                      onRetry={() => {
+                        setLoadError(false);
+                        setLoading(true);
+                        setRetryKey((k) => k + 1);
+                      }}
+                    />
+                  ) : loading ? (
+                    <div
+                      className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+                      role="status"
+                      aria-label="Loading courses"
+                    >
+                      <CourseSkeleton height={200} />
+                      <CourseSkeleton height={200} />
+                      <CourseSkeleton height={200} />
+                      <span className="sr-only">Loading courses...</span>
+                    </div>
+                  ) : courses.length === 0 ? (
+                    <EmptyState
+                      icon={FolderOpen}
+                      title="No courses yet"
+                      description="Create your first course to start uploading materials and publishing tests."
+                      action={
+                        <Button icon={Plus} onClick={() => setIsAddCourseModalOpen(true)}>
+                          Add Course
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                      {courses.map((course, idx) => (
+                        <CourseCard
+                          key={course.id}
+                          course={course}
+                          index={idx}
+                          height={200}
+                          onSelect={() => setSelectedCourseId(course.id)}
+                          badges={
+                            <>
+                              <CourseBadge>
+                                <FileText className="h-3 w-3" aria-hidden="true" />
+                                {course.materials.length}{" "}
+                                {course.materials.length === 1 ? "Material" : "Materials"}
+                              </CourseBadge>
+                              {course.activeTest && (
+                                <CourseBadge tone="success" dot>
+                                  Test Active
+                                </CourseBadge>
+                              )}
+                              {attendanceSessions.some((s) => s.courseId === course.id && s.status === "active") && (
+                                <CourseBadge tone="accent" dot>
+                                  Attendance Live
+                                </CourseBadge>
+                              )}
+                            </>
+                          }
+                          action={<>Manage Course &rarr;</>}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ) : courses.length === 0 ? (
-                <EmptyState
-                  icon={FolderOpen}
-                  title="No courses yet"
-                  description="Create your first course to start uploading materials and publishing tests."
-                  action={
-                    <Button icon={Plus} onClick={() => setIsAddCourseModalOpen(true)}>
-                      Add Course
-                    </Button>
-                  }
-                />
               ) : (
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {courses.map((course, idx) => (
-                      <CourseCard
-                        key={course.id}
-                        course={course}
-                        index={idx}
-                        height={200}
-                        onSelect={() => setSelectedCourseId(course.id)}
-                        badges={
-                          <>
-                            <CourseBadge>
-                              <FileText className="h-3 w-3" aria-hidden="true" />
-                              {course.materials.length}{" "}
-                              {course.materials.length === 1 ? "Material" : "Materials"}
-                            </CourseBadge>
-                            {course.activeTest && (
-                              <CourseBadge tone="success" dot>
-                                Test Active
-                              </CourseBadge>
-                            )}
-                            {attendanceSessions.some((s) => s.courseId === course.id && s.status === "active") && (
-                              <CourseBadge tone="accent" dot>
-                                Attendance Live
-                              </CourseBadge>
-                            )}
-                          </>
+                /* SUPERVISION SECTION */
+                <div className="space-y-6">
+                  {/* BENTO STATS CARDS */}
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="rounded-2xl border border-edge bg-black/5 dark:bg-white/5 p-4">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-muted">
+                        <Users className="h-4 w-4 text-accent" />
+                        Supervised Students
+                      </div>
+                      <div className="mt-2 font-mono text-2xl font-bold text-foreground">
+                        {supervisionMetrics.totalStudents}
+                      </div>
+                      <div className="text-[11px] text-muted mt-0.5">Assigned to your lab</div>
+                    </div>
+
+                    <div className="rounded-2xl border border-edge bg-black/5 dark:bg-white/5 p-4">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-muted">
+                        <CheckCircle2 className="h-4 w-4 text-success" />
+                        Active Roster
+                      </div>
+                      <div className="mt-2 font-mono text-2xl font-bold text-success">
+                        {supervisionMetrics.activeStudents}
+                      </div>
+                      <div className="text-[11px] text-muted mt-0.5">Eligible for AI vetting</div>
+                    </div>
+
+                    <div className="rounded-2xl border border-edge bg-black/5 dark:bg-white/5 p-4">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-muted">
+                        <CalendarCheck className="h-4 w-4 text-accent" />
+                        Active Cohorts
+                      </div>
+                      <div className="mt-2 truncate font-mono text-base sm:text-lg font-bold text-foreground">
+                        {supervisionMetrics.cohorts.length > 0
+                          ? supervisionMetrics.cohorts.join(", ")
+                          : "None"}
+                      </div>
+                      <div className="text-[11px] text-muted mt-0.5">Academic sessions</div>
+                    </div>
+
+                    <div className="rounded-2xl border border-edge bg-black/5 dark:bg-white/5 p-4">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-muted">
+                        <Sparkles className="h-4 w-4 text-amber-500" />
+                        Vetting Today
+                      </div>
+                      <div className="mt-2 font-mono text-2xl font-bold text-foreground">
+                        {supervisionMetrics.todaySubmissions}
+                      </div>
+                      <div className="text-[11px] text-muted mt-0.5">ThesisLab queries</div>
+                    </div>
+                  </div>
+
+                  {/* SUPERVISION ROSTER CARD */}
+                  <div className="rounded-2xl border border-edge bg-card p-5 shadow-card space-y-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h3 className="text-lg font-bold text-foreground">Research Students Roster</h3>
+                        <p className="text-xs text-muted">
+                          Undergraduate &amp; postgraduate project students under your active academic supervision.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-full sm:w-64">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted pointer-events-none" />
+                          <input
+                            type="text"
+                            placeholder="Filter by ID, name, or topic..."
+                            value={supervisionSearch}
+                            onChange={(e) => setSupervisionSearch(e.target.value)}
+                            className="field w-full pl-9 py-1.5 text-xs"
+                          />
+                        </div>
+                        <Link href="/admin/students">
+                          <Button variant="primary" size="sm" icon={ArrowRight}>
+                            Full Directory
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+
+                    {loadingSupervision ? (
+                      <div className="py-12 text-center text-sm text-muted">
+                        Loading supervision roster...
+                      </div>
+                    ) : filteredSupervisionStudents.length === 0 ? (
+                      <EmptyState
+                        icon={Users}
+                        title={
+                          supervisionSearch ? "No matching students found" : "No supervised students yet"
                         }
-                        action={<>Manage Course &rarr;</>}
+                        description={
+                          supervisionSearch
+                            ? `No students match "${supervisionSearch}".`
+                            : "Register your research students to allocate daily AI vetting quotas and approve project topics."
+                        }
+                        action={
+                          <Link href="/admin/students">
+                            <Button icon={Plus}>Add Supervised Student</Button>
+                          </Link>
+                        }
                       />
-                    ))}
+                    ) : (
+                      <div className="overflow-x-auto rounded-xl border border-edge">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-black/5 dark:bg-white/5 border-b border-edge">
+                            <tr>
+                              <th className="px-4 py-3 font-semibold text-muted-strong">Student ID</th>
+                              <th className="px-4 py-3 font-semibold text-muted-strong">Name</th>
+                              <th className="px-4 py-3 font-semibold text-muted-strong">Approved Thesis Topic</th>
+                              <th className="px-4 py-3 font-semibold text-muted-strong">Cohort</th>
+                              <th className="px-4 py-3 font-semibold text-muted-strong">Status</th>
+                              <th className="px-4 py-3 font-semibold text-right text-muted-strong">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-edge">
+                            {filteredSupervisionStudents.slice(0, 10).map((student) => (
+                              <tr key={student.student_id} className="hover:bg-accent/5 transition-colors">
+                                <td className="px-4 py-3 font-mono font-bold text-accent">
+                                  {student.student_id}
+                                </td>
+                                <td className="px-4 py-3 font-medium text-foreground">
+                                  {student.name || <span className="text-muted italic">Unassigned</span>}
+                                </td>
+                                <td className="px-4 py-3 max-w-xs truncate text-muted">
+                                  {student.project_topic || (
+                                    <span className="italic text-muted/70">No topic submitted yet</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 font-mono text-muted">
+                                  {student.academic_year || "2026/2027"}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span
+                                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                      student.is_active
+                                        ? "bg-success/15 text-success"
+                                        : "bg-danger/15 text-danger"
+                                    }`}
+                                  >
+                                    <span
+                                      className={`h-1.5 w-1.5 rounded-full ${
+                                        student.is_active ? "bg-success" : "bg-danger"
+                                      }`}
+                                    />
+                                    {student.is_active ? "Active" : "Disabled"}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <Link href={`/admin/students?search=${encodeURIComponent(student.student_id)}`}>
+                                    <span className="text-xs font-semibold text-accent hover:underline">
+                                      Edit &rarr;
+                                    </span>
+                                  </Link>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {filteredSupervisionStudents.length > 10 && (
+                          <div className="p-3 text-center border-t border-edge bg-black/5 dark:bg-white/5">
+                            <Link
+                              href="/admin/students"
+                              className="text-xs font-semibold text-accent hover:underline"
+                            >
+                              Showing 10 of {filteredSupervisionStudents.length} students — View full roster in Supervision Console &rarr;
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -2858,99 +3094,98 @@ export default function AdminDashboard() {
           </form>
         </Modal>
 
-        {/* ALL ATTENDANCE SESSIONS MODAL */}
+        {/* ADMIN SETTINGS & SECURITY MODAL */}
         <Modal
-          open={isAllAttendanceModalOpen}
-          onClose={() => setIsAllAttendanceModalOpen(false)}
-          title="All Attendance Sessions"
+          open={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
+          title="Admin Settings & Security"
+          size="lg"
         >
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted">
-                Manage attendance across all courses.
-              </p>
-              <Button
-                variant="primary"
-                size="sm"
-                icon={Plus}
-                onClick={() => {
-                  setNewAttendanceTopic(`Lecture Session`);
-                  setSelectedCourseForNewAttendance(courses[0]?.id || "");
-                  setIsCreateAttendanceModalOpen(true);
-                }}
-              >
-                Start New Attendance
-              </Button>
-            </div>
+            <p className="text-xs text-muted">
+              Configure system privileges, research supervision quotas, and authentication credentials.
+            </p>
 
-            {attendanceSessions.length === 0 ? (
-              <div className="py-8 text-center text-sm font-medium text-muted">
-                No attendance sessions recorded yet.
-              </div>
-            ) : (
-              <div className="max-h-[60vh] overflow-y-auto space-y-2">
-                {attendanceSessions.map((sess) => (
-                  <div
-                    key={sess.id}
-                    className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-edge bg-black/5 dark:bg-white/5 p-3.5"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-accent">
-                          {sess.courseCode}
-                        </span>
-                        <span
-                          className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
-                            sess.status === "active"
-                              ? "bg-success/15 text-success"
-                              : "bg-black/10 dark:bg-white/10 text-muted"
-                          }`}
-                        >
-                          {sess.status === "active" ? "Active" : "Closed"}
-                        </span>
-                        <span className="text-xs text-muted">
-                          {new Date(sess.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <h4 className="font-bold text-sm text-foreground mt-0.5">{sess.title}</h4>
-                      <p className="text-xs text-muted">{sess.attendeeCount || 0} Students Present</p>
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {sess.status === "active" && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          icon={PlayCircle}
-                          onClick={() => {
-                            setIsAllAttendanceModalOpen(false);
-                            setActiveAttendanceSession(sess);
-                          }}
-                        >
-                          Projector
-                        </Button>
-                      )}
-                      <Button
-                        variant="subtle"
-                        size="sm"
-                        onClick={() => {
-                          setIsAllAttendanceModalOpen(false);
-                          setRosterAttendanceSession(sess);
-                        }}
-                      >
-                        Roster
-                      </Button>
-                      <IconButton
-                        icon={Trash2}
-                        variant="subtle"
-                        label={`Delete ${sess.title}`}
-                        onClick={() => handleDeleteAttendanceSession(sess.id)}
-                      />
-                    </div>
+            <div className="grid grid-cols-1 gap-3">
+              {/* SUPERVISION SETTINGS CARD */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-edge bg-black/5 dark:bg-white/5 p-4 transition-all hover:border-accent/30">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                    <Users className="h-5 w-5" />
                   </div>
-                ))}
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">Supervision &amp; Project Students</h4>
+                    <p className="text-xs text-muted leading-relaxed">
+                      Manage assigned thesis students, review research topics, and set daily AI vetting quotas.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="subtle"
+                  size="sm"
+                  onClick={() => {
+                    setIsSettingsModalOpen(false);
+                    router.push("/admin/students");
+                  }}
+                  className="shrink-0"
+                >
+                  Manage Directory &rarr;
+                </Button>
               </div>
-            )}
+
+              {/* AUTHENTICATOR 2FA CARD */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-edge bg-black/5 dark:bg-white/5 p-4 transition-all hover:border-accent/30">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                    <QrCode className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">Two-Factor Authenticator (2FA)</h4>
+                    <p className="text-xs text-muted leading-relaxed">
+                      Pair or reset Google Authenticator / Apple Passwords. Protected by Master Password (619000).
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="subtle"
+                  size="sm"
+                  onClick={() => {
+                    setIsSettingsModalOpen(false);
+                    router.push("/admin/login");
+                  }}
+                  className="shrink-0"
+                >
+                  Configure 2FA &rarr;
+                </Button>
+              </div>
+
+              {/* LOCK DASHBOARD CARD */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-danger/20 bg-danger/5 p-4 transition-all">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-danger/10 text-danger">
+                    <Shield className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-danger">Lock Admin Console</h4>
+                    <p className="text-xs text-muted leading-relaxed">
+                      Immediately terminate your administrative session and return to the main homepage.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => {
+                    localStorage.removeItem("sciora_admin_auth");
+                    setIsSettingsModalOpen(false);
+                    router.push("/");
+                  }}
+                  className="shrink-0"
+                >
+                  Lock Dashboard
+                </Button>
+              </div>
+            </div>
           </div>
         </Modal>
       </div>

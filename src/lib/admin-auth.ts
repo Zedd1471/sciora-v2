@@ -137,3 +137,4 @@ export async function initializeOrResetSecret(masterKey: string): Promise<{
 
   return { success: true, secret, uri };
 }
+
