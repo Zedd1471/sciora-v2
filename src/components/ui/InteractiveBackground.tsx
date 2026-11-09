@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useLayoutEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useMounted } from "@/lib/useMounted";
 
@@ -8,6 +9,16 @@ const useIsomorphicLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 export default function InteractiveBackground() {
+  const pathname = usePathname();
+  if (pathname?.startsWith("/attendance")) return null;
+  if (
+    typeof window !== "undefined" &&
+    (window.location.hostname.startsWith("192.168.") ||
+      window.location.hostname.startsWith("10.") ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(window.location.hostname))
+  ) {
+    return null;
+  }
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 

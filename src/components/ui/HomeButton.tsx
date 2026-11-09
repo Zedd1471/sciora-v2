@@ -28,7 +28,7 @@ export function HomeButton() {
     setIsNavigating(false);
   }
 
-  if (!mounted || pathname === "/") return null;
+  if (!mounted || pathname === "/" || pathname?.startsWith("/attendance")) return null;
 
   const handleHomeClick = (e: React.MouseEvent) => {
     e.preventDefault();

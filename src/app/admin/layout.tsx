@@ -8,10 +8,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const isLoginPath = pathname === "/admin/login";
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
-    if (typeof window === "undefined") return null;
-    return isLoginPath || localStorage.getItem("sciora_admin_auth") === "true";
-  });
+  // Keep initial state identical on SSR and initial client hydration to prevent hydration mismatch
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(isLoginPath ? true : null);
 
   useEffect(() => {
     if (isLoginPath) {

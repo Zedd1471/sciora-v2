@@ -18,7 +18,14 @@ import {
   FolderOpen,
   Eye, AlertTriangle, Users, BookOpenCheck, CheckCircle2,
   BarChart3, TrendingUp, Check, Search,
+  CalendarCheck, Radio, Sparkles, CloudUpload, Wifi,
 } from "lucide-react";
+import { AttendanceProjectorModal } from "@/components/attendance/AttendanceProjectorModal";
+import { AttendanceRosterModal } from "@/components/attendance/AttendanceRosterModal";
+import {
+  type AttendanceSession,
+  exportAttendanceToCsv,
+} from "@/lib/attendance";
 import {
   collection,
   onSnapshot,
@@ -114,6 +121,18 @@ export default function AdminDashboard() {
   const [isLoadingBlocks, setIsLoadingBlocks] = useState(false);
   const [blocksTestTitle, setBlocksTestTitle] = useState("");
 
+  // Attendance State
+  const [attendanceSessions, setAttendanceSessions] = useState<AttendanceSession[]>([]);
+  const [activeAttendanceSession, setActiveAttendanceSession] = useState<AttendanceSession | null>(null);
+  const [rosterAttendanceSession, setRosterAttendanceSession] = useState<AttendanceSession | null>(null);
+  const [isCreateAttendanceModalOpen, setIsCreateAttendanceModalOpen] = useState(false);
+  const [newAttendanceTopic, setNewAttendanceTopic] = useState("");
+  const [isCreatingAttendance, setIsCreatingAttendance] = useState(false);
+  const [courseTab, setCourseTab] = useState<"content" | "attendance">("content");
+  const [isAllAttendanceModalOpen, setIsAllAttendanceModalOpen] = useState(false);
+  const [selectedCourseForNewAttendance, setSelectedCourseForNewAttendance] = useState<string>("");
+  const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+
   const toast = useToast();
   const router = useRouter();
 
@@ -163,7 +182,146 @@ export default function AdminDashboard() {
     return () => unsubscribe();
   }, [retryKey]);
 
+  // Subscribe to all attendance sessions
+  useEffect(() => {
+    const q = query(collection(db, "attendance_sessions"));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const list = snapshot.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        })) as AttendanceSession[];
+        list.sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setAttendanceSessions(list);
+      },
+      (err) => console.error("Error loading attendance sessions:", err)
+    );
+    return () => unsubscribe();
+  }, []);
+
+  // Keep active modals in sync with live Firestore session updates
+  useEffect(() => {
+    if (activeAttendanceSession) {
+      const match = attendanceSessions.find((s) => s.id === activeAttendanceSession.id);
+      if (match && match.attendeeCount !== activeAttendanceSession.attendeeCount) {
+        setActiveAttendanceSession(match);
+      }
+    }
+    if (rosterAttendanceSession) {
+      const match = attendanceSessions.find((s) => s.id === rosterAttendanceSession.id);
+      if (match) {
+        setRosterAttendanceSession(match);
+      }
+    }
+  }, [attendanceSessions, activeAttendanceSession, rosterAttendanceSession]);
+
   const selectedCourse = courses.find((c) => c.id === selectedCourseId);
+
+  const courseAttendanceSessions = useMemo(() => {
+    if (!selectedCourseId) return [];
+    return attendanceSessions.filter((s) => s.courseId === selectedCourseId);
+  }, [attendanceSessions, selectedCourseId]);
+
+  const handleCreateAttendance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const courseToUse = selectedCourse || courses.find((c) => c.id === selectedCourseForNewAttendance);
+    if (!courseToUse || !newAttendanceTopic.trim()) {
+      toast({ kind: "error", title: "Select a course and enter a topic" });
+      return;
+    }
+
+    setIsCreatingAttendance(true);
+    try {
+      const res = await fetch("/api/attendance/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          courseId: courseToUse.id,
+          courseCode: courseToUse.code,
+          courseTitle: courseToUse.title,
+          title: newAttendanceTopic.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Failed to create attendance session.");
+      }
+
+      const data = await res.json();
+      setIsCreateAttendanceModalOpen(false);
+      setNewAttendanceTopic("");
+      toast({ kind: "success", title: "Attendance Session Started!" });
+      setActiveAttendanceSession(data.session);
+    } catch (err) {
+      console.error("Error creating attendance:", err);
+      toast({
+        kind: "error",
+        title: "Could not start attendance",
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
+    } finally {
+      setIsCreatingAttendance(false);
+    }
+  };
+
+  const handleEndAttendanceSession = async (sessionId: string) => {
+    try {
+      const res = await fetch("/api/attendance/session", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, status: "ended" }),
+      });
+      if (res.ok) {
+        toast({ kind: "success", title: "Session ended." });
+        if (activeAttendanceSession?.id === sessionId) {
+          setActiveAttendanceSession(null);
+        }
+      }
+    } catch (err) {
+      console.error("Error ending attendance session:", err);
+    }
+  };
+
+  const handleDeleteAttendanceSession = async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/attendance/session?sessionId=${sessionId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        toast({ kind: "success", title: "Attendance session deleted." });
+      }
+    } catch (err) {
+      console.error("Error deleting session:", err);
+      toast({ kind: "error", title: "Could not delete session." });
+    }
+  };
+
+  const handleSyncOfflineData = async () => {
+    setIsSyncingCloud(true);
+    try {
+      const res = await fetch("/api/attendance/offline/sync", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Sync failed");
+      toast({
+        kind: "success",
+        title: "Cloud Sync Complete",
+        description: data.message,
+      });
+    } catch (err) {
+      console.error("Cloud sync error:", err);
+      toast({
+        kind: "error",
+        title: "Sync Failed",
+        description: err instanceof Error ? err.message : "Connect to internet and try again.",
+      });
+    } finally {
+      setIsSyncingCloud(false);
+    }
+  };
 
   const handleDeleteMaterial = async (courseId: string, materialId: string) => {
     const course = courses.find((c) => c.id === courseId);
@@ -1013,6 +1171,17 @@ export default function AdminDashboard() {
           title="Dashboard"
           actions={
             <>
+              <Button
+                variant="glass"
+                icon={CalendarCheck}
+                onClick={() => setIsAllAttendanceModalOpen(true)}
+                aria-label="Manage Course Attendance Sessions"
+              >
+                Attendance
+                {attendanceSessions.some((s) => s.status === "active") && (
+                  <span className="h-2 w-2 rounded-full bg-success animate-ping ml-1" />
+                )}
+              </Button>
               <Link href="/admin/students">
                 <Button
                   variant="glass"
@@ -1112,6 +1281,11 @@ export default function AdminDashboard() {
                                 Test Active
                               </CourseBadge>
                             )}
+                            {attendanceSessions.some((s) => s.courseId === course.id && s.status === "active") && (
+                              <CourseBadge tone="accent" dot>
+                                Attendance Live
+                              </CourseBadge>
+                            )}
                           </>
                         }
                         action={<>Manage Course &rarr;</>}
@@ -1139,16 +1313,251 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <Button
-                  variant="danger"
-                  icon={Trash2}
-                  onClick={() => setIsConfirmDeleteOpen(true)}
-                >
-                  <span className="hidden sm:inline">Delete Course</span>
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="primary"
+                    icon={QrCode}
+                    onClick={() => {
+                      setNewAttendanceTopic(`Lecture ${courseAttendanceSessions.length + 1}`);
+                      setSelectedCourseForNewAttendance(selectedCourse?.id || "");
+                      setIsCreateAttendanceModalOpen(true);
+                    }}
+                  >
+                    Start QR Attendance
+                  </Button>
+                  <Button
+                    variant="danger"
+                    icon={Trash2}
+                    onClick={() => setIsConfirmDeleteOpen(true)}
+                  >
+                    <span className="hidden sm:inline">Delete Course</span>
+                  </Button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+              {/* TAB SWITCHER */}
+              <div className="flex items-center gap-2 border-b border-edge pb-2">
+                <button
+                  type="button"
+                  onClick={() => setCourseTab("content")}
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all ${
+                    courseTab === "content"
+                      ? "bg-accent text-white shadow-soft"
+                      : "bg-black/5 dark:bg-white/5 text-muted hover:text-foreground"
+                  }`}
+                >
+                  <FileText className="h-4 w-4" />
+                  Materials & Tests
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCourseTab("attendance")}
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all ${
+                    courseTab === "attendance"
+                      ? "bg-accent text-white shadow-soft"
+                      : "bg-black/5 dark:bg-white/5 text-muted hover:text-foreground"
+                  }`}
+                >
+                  <CalendarCheck className="h-4 w-4" />
+                  QR Attendance
+                  {courseAttendanceSessions.filter((s) => s.status === "active").length > 0 && (
+                    <span className="h-2 w-2 rounded-full bg-success animate-ping" />
+                  )}
+                  <span className="ml-1 rounded-full bg-black/10 dark:bg-white/10 px-2 py-0.5 text-xs">
+                    {courseAttendanceSessions.length}
+                  </span>
+                </button>
+              </div>
+
+              {courseTab === "attendance" ? (
+                <div className="space-y-6">
+                  {/* ACTIVE SESSION HIGHLIGHT CARD */}
+                  {courseAttendanceSessions
+                    .filter((s) => s.status === "active")
+                    .map((activeSess) => (
+                      <motion.div
+                        key={activeSess.id}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="relative overflow-hidden rounded-2xl border-2 border-accent/40 bg-accent-soft p-5 shadow-card"
+                      >
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-white shadow-soft">
+                              <Radio className="h-6 w-6 animate-pulse" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-2.5 py-0.5 text-xs font-bold text-success">
+                                  <span className="h-2 w-2 rounded-full bg-success animate-ping" />
+                                  Live Broadcast Active
+                                </span>
+                                <span className="text-xs text-muted font-mono">
+                                  Started {new Date(activeSess.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                </span>
+                              </div>
+                              <h3 className="text-xl font-bold text-foreground mt-0.5">{activeSess.title}</h3>
+                              <p className="text-xs text-muted">
+                                Dynamic rotating QR code & 6-digit code live on screen
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-sm font-bold text-accent bg-white/70 dark:bg-white/10 px-3 py-1.5 rounded-xl border border-accent/20">
+                              {activeSess.attendeeCount || 0} Checked In
+                            </span>
+                            <Button
+                              variant="primary"
+                              icon={PlayCircle}
+                              onClick={() => setActiveAttendanceSession(activeSess)}
+                            >
+                              Open Projector
+                            </Button>
+                            <Button
+                              variant="glass"
+                              icon={Users}
+                              onClick={() => setRosterAttendanceSession(activeSess)}
+                            >
+                              Live Roster
+                            </Button>
+                            <Button
+                              variant="danger"
+                              onClick={() => handleEndAttendanceSession(activeSess.id)}
+                            >
+                              End Session
+                            </Button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+
+                  {/* SESSIONS HEADER & ACTION */}
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold text-foreground">Attendance History</h3>
+                      <p className="text-xs text-muted">
+                        All recorded lecture attendance sessions for {selectedCourse?.code}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Button
+                        variant="glass"
+                        size="sm"
+                        icon={CloudUpload}
+                        loading={isSyncingCloud}
+                        onClick={handleSyncOfflineData}
+                      >
+                        Sync Offline to Cloud
+                      </Button>
+                      <Button
+                        variant="primary"
+                        icon={Plus}
+                        onClick={() => {
+                          setNewAttendanceTopic(`Lecture ${courseAttendanceSessions.length + 1}`);
+                          setSelectedCourseForNewAttendance(selectedCourse?.id || "");
+                          setIsCreateAttendanceModalOpen(true);
+                        }}
+                      >
+                        Start New Attendance
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* SESSIONS LIST / EMPTY STATE */}
+                  {courseAttendanceSessions.length === 0 ? (
+                    <EmptyState
+                      icon={CalendarCheck}
+                      title="No attendance sessions yet"
+                      description="Start a live attendance session to broadcast a dynamic rotating QR code on your projector for students to scan."
+                      action={
+                        <Button
+                          variant="primary"
+                          icon={QrCode}
+                          onClick={() => {
+                            setNewAttendanceTopic("Lecture 1");
+                            setSelectedCourseForNewAttendance(selectedCourse?.id || "");
+                            setIsCreateAttendanceModalOpen(true);
+                          }}
+                        >
+                          Start First Session
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      {courseAttendanceSessions.map((sess) => (
+                        <div
+                          key={sess.id}
+                          className="glass flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-edge p-4"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
+                              <CalendarCheck className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                                    sess.status === "active"
+                                      ? "bg-success/15 text-success"
+                                      : "bg-black/10 dark:bg-white/10 text-muted"
+                                  }`}
+                                >
+                                  {sess.status === "active" ? "Active" : "Closed"}
+                                </span>
+                                <span className="font-mono text-xs text-muted">
+                                  {new Date(sess.createdAt).toLocaleDateString(undefined, {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })}
+                                </span>
+                              </div>
+                              <h4 className="font-bold text-sm text-foreground mt-0.5">{sess.title}</h4>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap justify-end">
+                            <span className="font-mono text-xs font-semibold text-muted bg-black/5 dark:bg-white/5 px-2.5 py-1 rounded-lg">
+                              {sess.attendeeCount || 0} Students
+                            </span>
+
+                            {sess.status === "active" && (
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                icon={PlayCircle}
+                                onClick={() => setActiveAttendanceSession(sess)}
+                              >
+                                Projector
+                              </Button>
+                            )}
+
+                            <Button
+                              variant="subtle"
+                              size="sm"
+                              icon={Users}
+                              onClick={() => setRosterAttendanceSession(sess)}
+                            >
+                              Roster
+                            </Button>
+
+                            <IconButton
+                              icon={Trash2}
+                              variant="subtle"
+                              label={`Delete attendance session ${sess.title}`}
+                              onClick={() => handleDeleteAttendanceSession(sess.id)}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
                 {/* MATERIALS MANAGER */}
                 <div className="space-y-4">
                   <div className="mb-4 flex items-end justify-between gap-4">
@@ -1702,7 +2111,8 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            )}
+          </motion.div>
           )}
         </AnimatePresence>
 
@@ -2353,6 +2763,177 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+        </Modal>
+
+        {/* ATTENDANCE PROJECTOR FULLSCREEN MODAL */}
+        {activeAttendanceSession && (
+          <AttendanceProjectorModal
+            session={activeAttendanceSession}
+            isOpen={true}
+            onClose={() => setActiveAttendanceSession(null)}
+            onEndSession={handleEndAttendanceSession}
+          />
+        )}
+
+        {/* ATTENDANCE ROSTER MODAL */}
+        {rosterAttendanceSession && (
+          <AttendanceRosterModal
+            session={rosterAttendanceSession}
+            isOpen={true}
+            onClose={() => setRosterAttendanceSession(null)}
+            onOpenProjector={() => {
+              const sess = rosterAttendanceSession;
+              setRosterAttendanceSession(null);
+              setActiveAttendanceSession(sess);
+            }}
+          />
+        )}
+
+        {/* CREATE ATTENDANCE SESSION MODAL */}
+        <Modal
+          open={isCreateAttendanceModalOpen}
+          onClose={() => setIsCreateAttendanceModalOpen(false)}
+          title="Start Live QR Attendance Session"
+          dismissible={!isCreatingAttendance}
+        >
+          <form onSubmit={handleCreateAttendance} className="space-y-4">
+            {!selectedCourse && (
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-strong">
+                  Select Course
+                </label>
+                <select
+                  className="field w-full"
+                  value={selectedCourseForNewAttendance}
+                  onChange={(e) => setSelectedCourseForNewAttendance(e.target.value)}
+                  required
+                >
+                  <option value="">-- Choose Course --</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.code} - {c.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <Field
+              label="Session Topic / Lecture Title"
+              placeholder="e.g. Lecture 4: Gene Cloning and Expression"
+              value={newAttendanceTopic}
+              onChange={(e) => setNewAttendanceTopic(e.target.value)}
+              required
+              hint="This title appears on the live projector screen and in students' verified records."
+            />
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="subtle"
+                onClick={() => setIsCreateAttendanceModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" loading={isCreatingAttendance}>
+                Launch Projector &amp; QR
+              </Button>
+            </div>
+          </form>
+        </Modal>
+
+        {/* ALL ATTENDANCE SESSIONS MODAL */}
+        <Modal
+          open={isAllAttendanceModalOpen}
+          onClose={() => setIsAllAttendanceModalOpen(false)}
+          title="All Attendance Sessions"
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted">
+                Manage attendance across all courses.
+              </p>
+              <Button
+                variant="primary"
+                size="sm"
+                icon={Plus}
+                onClick={() => {
+                  setNewAttendanceTopic(`Lecture Session`);
+                  setSelectedCourseForNewAttendance(courses[0]?.id || "");
+                  setIsCreateAttendanceModalOpen(true);
+                }}
+              >
+                Start New Attendance
+              </Button>
+            </div>
+
+            {attendanceSessions.length === 0 ? (
+              <div className="py-8 text-center text-sm font-medium text-muted">
+                No attendance sessions recorded yet.
+              </div>
+            ) : (
+              <div className="max-h-[60vh] overflow-y-auto space-y-2">
+                {attendanceSessions.map((sess) => (
+                  <div
+                    key={sess.id}
+                    className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-edge bg-black/5 dark:bg-white/5 p-3.5"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-accent">
+                          {sess.courseCode}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
+                            sess.status === "active"
+                              ? "bg-success/15 text-success"
+                              : "bg-black/10 dark:bg-white/10 text-muted"
+                          }`}
+                        >
+                          {sess.status === "active" ? "Active" : "Closed"}
+                        </span>
+                        <span className="text-xs text-muted">
+                          {new Date(sess.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-sm text-foreground mt-0.5">{sess.title}</h4>
+                      <p className="text-xs text-muted">{sess.attendeeCount || 0} Students Present</p>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {sess.status === "active" && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          icon={PlayCircle}
+                          onClick={() => {
+                            setIsAllAttendanceModalOpen(false);
+                            setActiveAttendanceSession(sess);
+                          }}
+                        >
+                          Projector
+                        </Button>
+                      )}
+                      <Button
+                        variant="subtle"
+                        size="sm"
+                        onClick={() => {
+                          setIsAllAttendanceModalOpen(false);
+                          setRosterAttendanceSession(sess);
+                        }}
+                      >
+                        Roster
+                      </Button>
+                      <IconButton
+                        icon={Trash2}
+                        variant="subtle"
+                        label={`Delete ${sess.title}`}
+                        onClick={() => handleDeleteAttendanceSession(sess.id)}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </Modal>
       </div>
     </div>

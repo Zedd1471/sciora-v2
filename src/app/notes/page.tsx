@@ -15,11 +15,14 @@ import {
   FolderOpen,
   Clock,
   ArrowRight,
+  CalendarCheck,
+  Radio,
 } from "lucide-react";
 import { PDFDocument, rgb, degrees } from "pdf-lib";
 import { useRouter } from "next/navigation";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { type AttendanceSession } from "@/lib/attendance";
 
 import { Button, IconButton } from "@/components/ui/Button";
 import { PageHeader, BackButton } from "@/components/ui/PageHeader";
@@ -98,6 +101,7 @@ export default function NotesViewer() {
 
   const [projectStudent, setProjectStudent] = useState<QuotaData | null>(null);
   const [activeTab, setActiveTab] = useState<"courses" | "thesislab">("courses");
+  const [activeAttendanceSessions, setActiveAttendanceSessions] = useState<AttendanceSession[]>([]);
 
   const [isNavigatingProfile, setIsNavigatingProfile] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -189,9 +193,26 @@ export default function NotesViewer() {
       },
     );
 
+    const qAttendance = query(
+      collection(db, "attendance_sessions"),
+      where("status", "==", "active")
+    );
+    const unsubscribeAttendance = onSnapshot(
+      qAttendance,
+      (snapshot) => {
+        const list = snapshot.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        })) as AttendanceSession[];
+        setActiveAttendanceSessions(list);
+      },
+      () => {}
+    );
+
     return () => {
       unsubscribeCourses();
       unsubscribeGrades();
+      unsubscribeAttendance();
     };
   }, [studentId, retryKey, toast]);
 
@@ -319,6 +340,17 @@ export default function NotesViewer() {
             <>
               <Button
                 variant="glass"
+                icon={CalendarCheck}
+                onClick={() => router.push("/attendance")}
+                aria-label="Attendance check-in"
+              >
+                Check In
+                {activeAttendanceSessions.length > 0 && (
+                  <span className="h-2 w-2 rounded-full bg-success animate-ping ml-1" />
+                )}
+              </Button>
+              <Button
+                variant="glass"
                 icon={User}
                 onClick={handleProfileClick}
                 disabled={isNavigatingProfile || isLoggingOut}
@@ -437,6 +469,44 @@ export default function NotesViewer() {
                 </div>
               )}
 
+              {/* ACTIVE ATTENDANCE BANNER */}
+              {activeAttendanceSessions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-2xl border-2 border-accent/40 bg-accent-soft p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-soft"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-white shadow-soft">
+                      <Radio className="h-5 w-5 animate-pulse" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-success/20 px-2 py-0.2 text-[11px] font-bold text-success">
+                          <span className="h-1.5 w-1.5 rounded-full bg-success animate-ping" />
+                          Live Attendance Open
+                        </span>
+                        <span className="font-mono text-xs font-bold text-accent">
+                          {activeAttendanceSessions.map((s) => s.courseCode).join(", ")}
+                        </span>
+                      </div>
+                      <p className="text-sm font-semibold text-foreground mt-0.5">
+                        {activeAttendanceSessions[0].title}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={ArrowRight}
+                    onClick={() => router.push(`/attendance?session=${activeAttendanceSessions[0].id}`)}
+                  >
+                    Check In Now
+                  </Button>
+                </motion.div>
+              )}
+
               <div className="flex items-center gap-2 text-muted-strong">
                 <LayoutGrid className="h-5 w-5 text-accent" aria-hidden="true" />
                 <h2 className="text-lg font-semibold">Select a Course</h2>
@@ -485,6 +555,11 @@ export default function NotesViewer() {
                               Test available
                             </CourseBadge>
                           ))}
+                          {activeAttendanceSessions.some((s) => s.courseId === course.id) && (
+                            <CourseBadge tone="accent" dot>
+                              Attendance Live
+                            </CourseBadge>
+                          )}
                         </>
                       }
                     />
@@ -511,6 +586,39 @@ export default function NotesViewer() {
                   </div>
                 </div>
               </div>
+
+              {/* COURSE SPECIFIC ATTENDANCE BANNER */}
+              {activeAttendanceSessions
+                .filter((s) => s.courseId === selectedCourse?.id)
+                .map((sess) => (
+                  <motion.div
+                    key={sess.id}
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-2xl border-2 border-accent/40 bg-accent-soft p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-soft"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-white shadow-soft">
+                        <Radio className="h-5 w-5 animate-pulse" />
+                      </div>
+                      <div>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-success/20 px-2.5 py-0.5 text-xs font-bold text-success">
+                          <span className="h-1.5 w-1.5 rounded-full bg-success animate-ping" />
+                          Live Lecture Attendance
+                        </span>
+                        <h3 className="text-base font-bold text-foreground mt-0.5">{sess.title}</h3>
+                      </div>
+                    </div>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      icon={ArrowRight}
+                      onClick={() => router.push(`/attendance?session=${sess.id}`)}
+                    >
+                      Check In Now
+                    </Button>
+                  </motion.div>
+                ))}
 
               <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                 {/* Notes Section */}
@@ -587,7 +695,7 @@ export default function NotesViewer() {
 
                     return (
                       <div className="space-y-3">
-                        {validTests.map((test: Record<string, unknown>) => (
+                        {validTests.map((test: Record<string, any>) => (
                           <motion.div
                             key={test.id}
                             initial={{ opacity: 0, scale: 0.96 }}
