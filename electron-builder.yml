@@ -4,6 +4,8 @@ directories:
   output: dist-electron
   buildResources: public
 
+afterPack: scripts/after-pack.js
+
 extraResources:
   - from: .next/standalone
     to: standalone

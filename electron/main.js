@@ -9,11 +9,47 @@ const PORT = 3000;
 let mainWindow = null;
 let serverProcess = null;
 
+// Persistent file logger
+let logFilePath = null;
+function initLogger() {
+  try {
+    const userData = app.getPath("userData");
+    fs.mkdirSync(userData, { recursive: true });
+    logFilePath = path.join(userData, "desktop.log");
+    fs.appendFileSync(
+      logFilePath,
+      `\n\n--- [${new Date().toISOString()}] Sciora Lecturer Console Startup (version: ${app.getVersion()}) ---\n`
+    );
+  } catch (e) {
+    // ignore
+  }
+}
+
+function log(...args) {
+  const line = args.map((a) => (typeof a === "object" ? JSON.stringify(a) : a)).join(" ");
+  console.log(line);
+  if (logFilePath) {
+    try {
+      fs.appendFileSync(logFilePath, `[${new Date().toISOString()}] ${line}\n`);
+    } catch {}
+  }
+}
+
+function logError(...args) {
+  const line = args.map((a) => (typeof a === "object" ? JSON.stringify(a) : a)).join(" ");
+  console.error(line);
+  if (logFilePath) {
+    try {
+      fs.appendFileSync(logFilePath, `[${new Date().toISOString()} ERROR] ${line}\n`);
+    } catch {}
+  }
+}
+
 // Probe local server
 function checkPort(port) {
   return new Promise((resolve) => {
     const req = http.get(`http://127.0.0.1:${port}/api/attendance/offline/network`, (res) => {
-      resolve(true);
+      resolve(res.statusCode >= 200 && res.statusCode < 400);
     });
     req.on("error", () => resolve(false));
     req.setTimeout(800, () => {
@@ -24,12 +60,12 @@ function checkPort(port) {
 }
 
 // Poll until local server responds
-async function waitForServer(port, timeoutMs = 45000) {
+async function waitForServer(port, timeoutMs = 30000) {
   const startTime = Date.now();
   while (Date.now() - startTime < timeoutMs) {
     const isUp = await checkPort(port);
     if (isUp) return true;
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 500));
   }
   return false;
 }
@@ -38,57 +74,72 @@ async function waitForServer(port, timeoutMs = 45000) {
 async function startServer() {
   const isAlreadyRunning = await checkPort(PORT);
   if (isAlreadyRunning) {
-    console.log(`[Sciora Desktop] Engine already listening on port ${PORT}.`);
-    return;
+    log(`[Sciora Desktop] Engine already listening on port ${PORT}.`);
+    return true;
   }
 
   const isPackaged = app.isPackaged;
-  console.log(`[Sciora Desktop] Starting background server (isPackaged=${isPackaged})...`);
+  log(`[Sciora Desktop] Starting background server (isPackaged=${isPackaged})...`);
+  log(`[Sciora Desktop] App Path: ${app.getAppPath()}`);
+  log(`[Sciora Desktop] Resources Path: ${process.resourcesPath}`);
 
-  // Path to standalone server.js
-  let serverScript = null;
-  if (isPackaged) {
-    serverScript = path.join(process.resourcesPath, "standalone", "server.js");
-  } else {
-    const localStandalone = path.join(__dirname, "..", ".next", "standalone", "server.js");
-    if (fs.existsSync(localStandalone)) {
-      serverScript = localStandalone;
-    }
-  }
+  // Candidate locations for standalone server.js
+  const candidatePaths = [
+    path.join(process.resourcesPath, "standalone", "server.js"),
+    path.join(app.getAppPath(), "standalone", "server.js"),
+    path.join(app.getAppPath(), "..", "standalone", "server.js"),
+    path.join(__dirname, "..", ".next", "standalone", "server.js"),
+  ];
 
-  if (serverScript && fs.existsSync(serverScript)) {
-    console.log(`[Sciora Desktop] Forking standalone Next.js engine: ${serverScript}`);
+  let serverScript = candidatePaths.find((p) => fs.existsSync(p));
+
+  if (serverScript) {
+    log(`[Sciora Desktop] Located standalone Next.js engine: ${serverScript}`);
+    const serverDir = path.dirname(serverScript);
+
+    // Verify node_modules exists
+    const hasModules = fs.existsSync(path.join(serverDir, "node_modules"));
+    log(`[Sciora Desktop] Standalone node_modules present: ${hasModules} in ${serverDir}`);
+
     serverProcess = fork(serverScript, [], {
-      cwd: path.dirname(serverScript),
+      cwd: serverDir,
       env: {
         ...process.env,
         PORT: String(PORT),
         HOSTNAME: "0.0.0.0",
         NODE_ENV: "production",
+        ELECTRON_RUN_AS_NODE: "1",
       },
       stdio: "pipe",
     });
 
     serverProcess.stdout?.on("data", (data) => {
-      console.log(`[Engine] ${data.toString().trim()}`);
+      log(`[Engine] ${data.toString().trim()}`);
     });
     serverProcess.stderr?.on("data", (data) => {
-      console.error(`[Engine Error] ${data.toString().trim()}`);
+      logError(`[Engine Error] ${data.toString().trim()}`);
+    });
+
+    serverProcess.on("exit", (code, signal) => {
+      log(`[Engine] Process exited with code=${code} signal=${signal}`);
     });
   } else {
-    // Fallback: spawn dev server if not in standalone
-    console.log("[Sciora Desktop] Standalone not found, launching via npm run dev...");
-    const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
-    serverProcess = spawn(npmCmd, ["run", "dev"], {
-      cwd: app.getAppPath(),
-      shell: true,
-      stdio: "inherit",
-      env: { ...process.env, PORT: String(PORT), HOSTNAME: "0.0.0.0" },
-    });
+    logError("[Sciora Desktop] Standalone server.js not found in candidate paths:", candidatePaths);
+    // Fallback in dev: spawn npm run dev
+    if (!isPackaged) {
+      log("[Sciora Desktop] Launching development server via npm run dev...");
+      const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
+      serverProcess = spawn(npmCmd, ["run", "dev"], {
+        cwd: app.getAppPath(),
+        shell: true,
+        stdio: "inherit",
+        env: { ...process.env, PORT: String(PORT), HOSTNAME: "0.0.0.0" },
+      });
+    }
   }
 
-  serverProcess.on("error", (err) => {
-    console.error("[Sciora Desktop] Server process error:", err);
+  serverProcess?.on("error", (err) => {
+    logError("[Sciora Desktop] Server process error:", err);
   });
 }
 
@@ -125,10 +176,9 @@ function createMainWindow() {
     minWidth: 1080,
     minHeight: 720,
     title: "Sciora — Lecturer Console",
-    icon: path.join(__dirname, "../public/sciora.ico"),
-    backgroundColor: "#141519",
+    backgroundColor: "#09090b",
     autoHideMenuBar: true,
-    show: false,
+    show: true, // Show window immediately so user knows app has opened
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -144,14 +194,13 @@ function createMainWindow() {
     return { action: "deny" };
   });
 
-  const targetUrl = `http://localhost:${PORT}/admin`;
-  mainWindow.loadURL(targetUrl);
-
-  mainWindow.once("ready-to-show", () => {
-    mainWindow.show();
-    console.log(`[Sciora Desktop] Window ready at ${targetUrl}`);
-    console.log(`[Sciora Desktop] Classroom Hotspot listening at http://${getLocalNetworkIp()}:${PORT}`);
-  });
+  // Load splash screen immediately
+  const splashPath = path.join(__dirname, "splash.html");
+  if (fs.existsSync(splashPath)) {
+    mainWindow.loadFile(splashPath);
+  } else {
+    mainWindow.loadURL(`data:text/html,<html><body style="background:#09090b;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;"><h3>Initializing Sciora Lecturer Console...</h3></body></html>`);
+  }
 
   mainWindow.on("closed", () => {
     mainWindow = null;
@@ -170,17 +219,61 @@ ipcMain.handle("get-hotspot-info", () => {
   };
 });
 
+ipcMain.handle("open-log-file", () => {
+  if (logFilePath && fs.existsSync(logFilePath)) {
+    shell.openPath(logFilePath);
+  }
+});
+
 // App Lifecycle
 app.whenReady().then(async () => {
-  await startServer();
-  const ready = await waitForServer(PORT);
-  if (!ready) {
-    dialog.showErrorBox(
-      "Engine Startup Warning",
-      "Sciora local engine is taking longer than expected to bind port 3000. Launching dashboard..."
-    );
-  }
+  initLogger();
+  log("[Sciora Desktop] App whenReady fired.");
+
+  // 1. Create window and show splash screen immediately
   createMainWindow();
+
+  // 2. Start server in background
+  try {
+    await startServer();
+  } catch (err) {
+    logError("[Sciora Desktop] startServer threw:", err);
+  }
+
+  // 3. Wait for port 3000 to accept requests
+  log("[Sciora Desktop] Waiting for local engine on port " + PORT + "...");
+  const isUp = await waitForServer(PORT, 35000);
+
+  if (isUp) {
+    log("[Sciora Desktop] Local engine is ready! Loading dashboard...");
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.loadURL(`http://localhost:${PORT}/admin`);
+    }
+  } else {
+    logError("[Sciora Desktop] Server timed out on port " + PORT);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const errorHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { background: #09090b; color: #fff; font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+            h2 { color: #f87171; margin-bottom: 8px; font-size: 20px; }
+            p { color: #a1a1aa; font-size: 13px; max-width: 440px; line-height: 1.5; margin-bottom: 24px; }
+            button { background: #6366f1; color: #fff; border: none; padding: 10px 22px; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 13px; }
+            button:hover { background: #4f46e5; }
+          </style>
+        </head>
+        <body>
+          <h2>Engine Startup Delayed</h2>
+          <p>The local Sciora classroom engine took longer than expected to bind port 3000. Click below to retry connecting.</p>
+          <button onclick="window.location.href='http://localhost:3000/admin'">Open Dashboard</button>
+        </body>
+        </html>
+      `;
+      mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(errorHtml)}`);
+    }
+  }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
@@ -189,6 +282,7 @@ app.whenReady().then(async () => {
 
 function stopServer() {
   if (serverProcess) {
+    log("[Sciora Desktop] Stopping serverProcess pid=" + serverProcess.pid);
     try {
       if (process.platform === "win32") {
         spawn("taskkill", ["/pid", String(serverProcess.pid), "/f", "/t"]);
