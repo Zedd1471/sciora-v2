@@ -4,19 +4,22 @@ directories:
   output: dist-electron
   buildResources: public
 
+extraResources:
+  - from: .next/standalone
+    to: standalone
+    filter:
+      - "**/*"
+
 files:
-  - "**/*"
-  - "!node_modules"
-  - "!dist-electron"
-  - "!**/*.ts"
-  - "!**/*.tsx"
+  - "electron/**/*"
+  - "package.json"
 
 win:
   target:
     - target: portable
       arch:
         - x64
-  icon: public/sciora.ico
+  icon: public/icon.png
 
 portable:
-  artifactName: "${productName}-${version}.exe"
+  artifactName: "Sciora-Lecturer-Console.exe"

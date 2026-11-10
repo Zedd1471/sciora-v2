@@ -1,31 +1,29 @@
 const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
 const path = require("path");
 const http = require("http");
-const { spawn } = require("child_process");
+const { fork, spawn } = require("child_process");
 const os = require("os");
+const fs = require("fs");
 
 const PORT = 3000;
 let mainWindow = null;
 let serverProcess = null;
-let isQuitting = false;
 
-// Check if a port is already in use (e.g. Next.js already running)
+// Probe local server
 function checkPort(port) {
   return new Promise((resolve) => {
     const req = http.get(`http://127.0.0.1:${port}/api/attendance/offline/network`, (res) => {
       resolve(true);
     });
-    req.on("error", () => {
-      resolve(false);
-    });
-    req.setTimeout(1000, () => {
+    req.on("error", () => resolve(false));
+    req.setTimeout(800, () => {
       req.abort();
       resolve(false);
     });
   });
 }
 
-// Poll until local server is responsive
+// Poll until local server responds
 async function waitForServer(port, timeoutMs = 45000) {
   const startTime = Date.now();
   while (Date.now() - startTime < timeoutMs) {
@@ -36,39 +34,61 @@ async function waitForServer(port, timeoutMs = 45000) {
   return false;
 }
 
-// Start the local Next.js background server
+// Start the local Next.js standalone background server
 async function startServer() {
   const isAlreadyRunning = await checkPort(PORT);
   if (isAlreadyRunning) {
-    console.log(`[Sciora Desktop] Next.js server already running on port ${PORT}.`);
+    console.log(`[Sciora Desktop] Engine already listening on port ${PORT}.`);
     return;
   }
 
-  const isDev = !app.isPackaged;
-  console.log(`[Sciora Desktop] Starting local Next.js server (isDev=${isDev})...`);
+  const isPackaged = app.isPackaged;
+  console.log(`[Sciora Desktop] Starting background server (isPackaged=${isPackaged})...`);
 
-  const npxCmd = process.platform === "win32" ? "npx.cmd" : "npx";
-  const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
+  // Path to standalone server.js
+  let serverScript = null;
+  if (isPackaged) {
+    serverScript = path.join(process.resourcesPath, "standalone", "server.js");
+  } else {
+    const localStandalone = path.join(__dirname, "..", ".next", "standalone", "server.js");
+    if (fs.existsSync(localStandalone)) {
+      serverScript = localStandalone;
+    }
+  }
 
-  if (isDev) {
+  if (serverScript && fs.existsSync(serverScript)) {
+    console.log(`[Sciora Desktop] Forking standalone Next.js engine: ${serverScript}`);
+    serverProcess = fork(serverScript, [], {
+      cwd: path.dirname(serverScript),
+      env: {
+        ...process.env,
+        PORT: String(PORT),
+        HOSTNAME: "0.0.0.0",
+        NODE_ENV: "production",
+      },
+      stdio: "pipe",
+    });
+
+    serverProcess.stdout?.on("data", (data) => {
+      console.log(`[Engine] ${data.toString().trim()}`);
+    });
+    serverProcess.stderr?.on("data", (data) => {
+      console.error(`[Engine Error] ${data.toString().trim()}`);
+    });
+  } else {
+    // Fallback: spawn dev server if not in standalone
+    console.log("[Sciora Desktop] Standalone not found, launching via npm run dev...");
+    const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
     serverProcess = spawn(npmCmd, ["run", "dev"], {
       cwd: app.getAppPath(),
       shell: true,
       stdio: "inherit",
-      env: { ...process.env, PORT: String(PORT), HOST: "0.0.0.0" },
-    });
-  } else {
-    // In production package, run "npm run start"
-    serverProcess = spawn(npmCmd, ["run", "start"], {
-      cwd: app.getAppPath(),
-      shell: true,
-      stdio: "inherit",
-      env: { ...process.env, PORT: String(PORT), HOST: "0.0.0.0" },
+      env: { ...process.env, PORT: String(PORT), HOSTNAME: "0.0.0.0" },
     });
   }
 
   serverProcess.on("error", (err) => {
-    console.error("[Sciora Desktop] Failed to start local server:", err);
+    console.error("[Sciora Desktop] Server process error:", err);
   });
 }
 
@@ -108,7 +128,7 @@ function createMainWindow() {
     icon: path.join(__dirname, "../public/sciora.ico"),
     backgroundColor: "#141519",
     autoHideMenuBar: true,
-    show: false, // Show once ready-to-show to prevent white flash
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -117,7 +137,6 @@ function createMainWindow() {
     },
   });
 
-  // Open external links in user's default browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("http:") || url.startsWith("https:")) {
       shell.openExternal(url);
@@ -130,8 +149,8 @@ function createMainWindow() {
 
   mainWindow.once("ready-to-show", () => {
     mainWindow.show();
-    console.log(`[Sciora Desktop] Lecturer Console loaded on ${targetUrl}`);
-    console.log(`[Sciora Desktop] Offline Classroom Hotspot URL: http://${getLocalNetworkIp()}:${PORT}`);
+    console.log(`[Sciora Desktop] Window ready at ${targetUrl}`);
+    console.log(`[Sciora Desktop] Classroom Hotspot listening at http://${getLocalNetworkIp()}:${PORT}`);
   });
 
   mainWindow.on("closed", () => {
@@ -157,8 +176,8 @@ app.whenReady().then(async () => {
   const ready = await waitForServer(PORT);
   if (!ready) {
     dialog.showErrorBox(
-      "Server Timeout",
-      "Sciora local background engine could not start in time. Please verify that port 3000 is not blocked."
+      "Engine Startup Warning",
+      "Sciora local engine is taking longer than expected to bind port 3000. Launching dashboard..."
     );
   }
   createMainWindow();
@@ -168,8 +187,7 @@ app.whenReady().then(async () => {
   });
 });
 
-app.on("before-quit", () => {
-  isQuitting = true;
+function stopServer() {
   if (serverProcess) {
     try {
       if (process.platform === "win32") {
@@ -178,12 +196,15 @@ app.on("before-quit", () => {
         serverProcess.kill("SIGTERM");
       }
     } catch (e) {
-      console.error("[Sciora Desktop] Error stopping server process:", e);
+      /* ignore */
     }
+    serverProcess = null;
   }
-});
+}
 
+app.on("before-quit", stopServer);
 app.on("window-all-closed", () => {
+  stopServer();
   if (process.platform !== "darwin") {
     app.quit();
   }
