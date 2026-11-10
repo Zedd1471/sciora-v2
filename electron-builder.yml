@@ -1,0 +1,22 @@
+appId: com.sciora.lecturer
+productName: Sciora Lecturer Console
+directories:
+  output: dist-electron
+  buildResources: public
+
+files:
+  - "**/*"
+  - "!node_modules"
+  - "!dist-electron"
+  - "!**/*.ts"
+  - "!**/*.tsx"
+
+win:
+  target:
+    - target: portable
+      arch:
+        - x64
+  icon: public/sciora.ico
+
+portable:
+  artifactName: "${productName}-${version}.exe"

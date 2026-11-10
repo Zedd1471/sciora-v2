@@ -146,9 +146,16 @@ export default function AdminDashboard() {
   });
   const [loadingSupervision, setLoadingSupervision] = useState(false);
   const [supervisionSearch, setSupervisionSearch] = useState("");
+  const [isDesktopApp, setIsDesktopApp] = useState(false);
 
   const toast = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && (window as any).scioraDesktop?.isDesktop) {
+      setIsDesktopApp(true);
+    }
+  }, []);
 
   // Load supervision metrics on mount
   useEffect(() => {
@@ -1208,12 +1215,18 @@ export default function AdminDashboard() {
         <PageHeader
           icon={LayoutDashboard}
           eyebrow={
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 flex-wrap">
               <span className="text-base font-bold text-accent tracking-wide uppercase">Admin</span>
               <span className="inline-flex items-center gap-1 rounded-full border border-success/25 bg-success/10 px-2.5 py-0.5 text-xs font-semibold text-success normal-case tracking-normal">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
                 Authenticated
               </span>
+              {isDesktopApp && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-accent/25 bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent normal-case tracking-normal">
+                  <Wifi className="h-3 w-3" />
+                  Desktop Hotspot Mode
+                </span>
+              )}
             </span>
           }
           title="Dashboard"
