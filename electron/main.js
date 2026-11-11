@@ -9,6 +9,12 @@ const PORT = 3000;
 let mainWindow = null;
 let serverProcess = null;
 
+// Performance and responsiveness optimizations
+app.commandLine.appendSwitch("disable-gpu-process-crash-limit");
+app.commandLine.appendSwitch("enable-smooth-scrolling");
+app.commandLine.appendSwitch("disable-background-timer-throttling");
+app.commandLine.appendSwitch("disable-renderer-backgrounding");
+
 // Persistent file logger
 let logFilePath = null;
 function initLogger() {

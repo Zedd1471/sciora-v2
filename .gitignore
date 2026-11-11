@@ -36,6 +36,7 @@ yarn-error.log*
 
 # desktop / electron
 dist-electron/
+dist-desktop/
 .cache/
 awesome-design-skills/
 

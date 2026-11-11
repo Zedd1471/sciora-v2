@@ -218,19 +218,19 @@ export default function AdminLogin() {
                 {mode === "setup"
                   ? "Pair Authenticator"
                   : mode === "reconfigure-locked"
-                  ? isConfigured
-                    ? "Authorize Reconfiguration"
-                    : "Initial Setup Required"
-                  : "Admin Gateway"}
+                    ? isConfigured
+                      ? "Authorize Reconfiguration"
+                      : "Initial Setup Required"
+                    : "Admin Gateway"}
               </h1>
               <p className="text-muted mt-1.5 text-xs sm:text-sm leading-relaxed max-w-xs">
                 {mode === "setup"
                   ? "Scan this QR code in Google Authenticator or Authy to complete pairing."
                   : mode === "reconfigure-locked"
-                  ? isConfigured
-                    ? "Enter your Master Admin Password to unlock Authenticator reconfiguration."
-                    : "Enter Master Admin Password to configure your Google Authenticator."
-                  : "Secured by Google Authenticator or Master Passkey."}
+                    ? isConfigured
+                      ? "Enter your Master Admin Password to unlock Authenticator reconfiguration."
+                      : "Enter Master Admin Password to configure your Google Authenticator."
+                    : "Secured by Google Authenticator or Master Passkey."}
               </p>
             </div>
 
@@ -371,13 +371,12 @@ export default function AdminLogin() {
                         onChange={(e) => handleInputChange(i, e.target.value)}
                         onKeyDown={(e) => handleKeyDown(i, e)}
                         autoFocus={i === 0}
-                        className={`w-11 h-14 bg-white/60 dark:bg-black/40 border ${
-                          error
+                        className={`w-11 h-14 bg-white/60 dark:bg-black/40 border ${error
                             ? "border-danger/60 text-danger"
                             : isSuccess
-                            ? "border-success/60 text-success"
-                            : "border-edge"
-                        } rounded-xl text-center text-2xl font-mono text-foreground focus:border-accent focus:ring-2 focus:ring-accent/30 transition-all duration-200 disabled:opacity-50`}
+                              ? "border-success/60 text-success"
+                              : "border-edge"
+                          } rounded-xl text-center text-2xl font-mono text-foreground focus:border-accent focus:ring-2 focus:ring-accent/30 transition-all duration-200 disabled:opacity-50`}
                       />
                     ))}
                   </motion.div>
@@ -391,9 +390,8 @@ export default function AdminLogin() {
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.9 }}
-                          className={`flex items-center gap-2 font-medium text-xs sm:text-sm ${
-                            isSuccess ? "text-success" : "text-accent"
-                          }`}
+                          className={`flex items-center gap-2 font-medium text-xs sm:text-sm ${isSuccess ? "text-success" : "text-accent"
+                            }`}
                         >
                           {isSuccess ? (
                             <>
@@ -442,14 +440,7 @@ export default function AdminLogin() {
               </div>
             )}
 
-            {/* LOCALHOST CONVENIENCE NOTICE (NEVER ON HOTSPOT) */}
-            {isLocalhost && (
-              <div className="mt-4 pt-3 border-t border-edge text-center">
-                <span className="text-[10px] text-muted">
-                  Tip: Master Passkey <code className="font-mono font-bold text-accent">619000</code> logs in directly.
-                </span>
-              </div>
-            )}
+
           </div>
         </div>
       </motion.div>

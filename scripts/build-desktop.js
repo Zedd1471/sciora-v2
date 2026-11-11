@@ -43,14 +43,15 @@ async function build() {
   copyDir(publicSrc, publicDest);
   copyDir(staticSrc, staticDest);
 
-  console.log("=== [3/4] Packaging Standalone Sciora Desktop .exe ===");
+  console.log("=== [3/4] Packaging Instant-Launch Sciora Desktop Application ===");
   const builderCli = path.join(root, "node_modules", "electron-builder", "cli.js");
-  execSync(`node "${builderCli}" --win portable`, {
+  execSync(`node "${builderCli}" --config electron-builder.yml`, {
     stdio: "inherit",
   });
 
-  console.log("=== [4/4] Build Complete! ===");
-  console.log("Check the 'dist-electron' folder for your portable Sciora Lecturer Console .exe!");
+  console.log("=== [4/4] Desktop Build Complete! ===");
+  console.log("1. Installer: dist-desktop/Sciora-Lecturer-Setup.exe");
+  console.log("2. Direct App: dist-desktop/win-unpacked/Sciora Lecturer Console.exe");
 }
 
 build().catch((err) => {

@@ -191,10 +191,10 @@ export default function AdminDashboard() {
           where("completedAt", "<", threeMonthsAgo)
         );
         const snapshot = await getDocs(q);
-        const deletePromises = snapshot.docs.map((docSnap) => 
+        const deletePromises = snapshot.docs.map((docSnap) =>
           deleteDoc(doc(db, "grades", docSnap.id))
         );
-        
+
         if (deletePromises.length > 0) {
           await Promise.all(deletePromises);
           console.log(`Auto-cleaned ${deletePromises.length} expired grade records.`);
@@ -629,12 +629,12 @@ export default function AdminDashboard() {
       const pValue = hasDetailedResponses
         ? Math.round((correctCount / attemptsCount) * 100)
         : (totalSubmissions > 0
-            ? Math.round(
-                (currentResults.reduce((acc, r) => acc + (Number(r.score) / (Number(r.totalQuestions) || 1)), 0) /
-                  totalSubmissions) *
-                  100
-              )
-            : 0);
+          ? Math.round(
+            (currentResults.reduce((acc, r) => acc + (Number(r.score) / (Number(r.totalQuestions) || 1)), 0) /
+              totalSubmissions) *
+            100
+          )
+          : 0);
 
       let distractorTrapOption: string | null = null;
       let distractorTrapPct = 0;
@@ -767,8 +767,8 @@ export default function AdminDashboard() {
           item.classification === "hard"
             ? "Hard (Requires Review)"
             : item.classification === "mastery"
-            ? "High Mastery"
-            : "Optimal Discrimination",
+              ? "High Mastery"
+              : "Optimal Discrimination",
           String(item.attemptsCount),
           String(item.correctCount),
           item.distractorTrapOption ? "YES" : "NO",
@@ -816,15 +816,15 @@ export default function AdminDashboard() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      
+
       const res = await fetch('/api/parse-pdf', {
         method: 'POST',
         body: formData
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to parse PDF');
-      
+
       setRawQuestionsText(prev => prev ? prev + '\n\n' + data.text : data.text);
     } catch (err) {
       console.error(err);
@@ -1001,17 +1001,17 @@ export default function AdminDashboard() {
       }
 
       const newTest = {
-          id: Date.now().toString(),
-          title: testTitle,
-          duration: testDuration,
-          questions: testPoolSize ? parseInt(testPoolSize, 10) : parsedQuestions.length,
-          poolSize: testPoolSize || parsedQuestions.length.toString(),
-          cooldown: testCooldown || "30",
-          expiresAt: expiresAt,
-          validFrom: validFrom,
-          maxTakes: testMaxTakes ? parseInt(testMaxTakes, 10) : null,
-          isPracticeMode: testIsPracticeMode,
-          testData: parsedQuestions,
+        id: Date.now().toString(),
+        title: testTitle,
+        duration: testDuration,
+        questions: testPoolSize ? parseInt(testPoolSize, 10) : parsedQuestions.length,
+        poolSize: testPoolSize || parsedQuestions.length.toString(),
+        cooldown: testCooldown || "30",
+        expiresAt: expiresAt,
+        validFrom: validFrom,
+        maxTakes: testMaxTakes ? parseInt(testMaxTakes, 10) : null,
+        isPracticeMode: testIsPracticeMode,
+        testData: parsedQuestions,
       };
 
       const course = courses.find(c => c.id === selectedCourseId);
@@ -1107,16 +1107,16 @@ export default function AdminDashboard() {
       let updatedLegacyActiveTest = course.activeTest;
       if (course.activeTest && course.activeTest.id === editingTestId) {
         updatedLegacyActiveTest = {
-            ...course.activeTest,
-            title: testTitle,
-            duration: testDuration,
-            poolSize: testPoolSize,
-            questions: testPoolSize ? parseInt(testPoolSize, 10) : course.activeTest.testData?.length || 0,
-            cooldown: testCooldown,
-            expiresAt: expiresAt,
-            validFrom: validFrom,
-            maxTakes: testMaxTakes ? parseInt(testMaxTakes, 10) : null,
-            isPracticeMode: testIsPracticeMode,
+          ...course.activeTest,
+          title: testTitle,
+          duration: testDuration,
+          poolSize: testPoolSize,
+          questions: testPoolSize ? parseInt(testPoolSize, 10) : course.activeTest.testData?.length || 0,
+          cooldown: testCooldown,
+          expiresAt: expiresAt,
+          validFrom: validFrom,
+          maxTakes: testMaxTakes ? parseInt(testMaxTakes, 10) : null,
+          isPracticeMode: testIsPracticeMode,
         };
       }
 
@@ -1252,20 +1252,18 @@ export default function AdminDashboard() {
                   <button
                     type="button"
                     onClick={() => setDashboardSection("courses")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-                      dashboardSection === "courses"
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${dashboardSection === "courses"
                         ? "bg-white text-zinc-950 shadow-sm font-bold"
                         : "text-muted hover:text-foreground"
-                    }`}
+                      }`}
                   >
                     <BookOpenCheck className="h-4 w-4" />
                     Courses
                     <span
-                      className={`ml-1 rounded-full px-2 py-0.5 text-xs font-mono font-bold ${
-                        dashboardSection === "courses"
+                      className={`ml-1 rounded-full px-2 py-0.5 text-xs font-mono font-bold ${dashboardSection === "courses"
                           ? "bg-zinc-900/10 text-zinc-950"
                           : "bg-accent/10 text-accent"
-                      }`}
+                        }`}
                     >
                       {courses.length}
                     </span>
@@ -1274,21 +1272,19 @@ export default function AdminDashboard() {
                   <button
                     type="button"
                     onClick={() => setDashboardSection("supervision")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-                      dashboardSection === "supervision"
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${dashboardSection === "supervision"
                         ? "bg-white text-zinc-950 shadow-sm font-bold"
                         : "text-muted hover:text-foreground"
-                    }`}
+                      }`}
                   >
                     <Users className="h-4 w-4" />
                     Supervision
                     {supervisionMetrics.totalStudents > 0 && (
                       <span
-                        className={`ml-1 rounded-full px-2 py-0.5 text-xs font-mono font-bold ${
-                          dashboardSection === "supervision"
+                        className={`ml-1 rounded-full px-2 py-0.5 text-xs font-mono font-bold ${dashboardSection === "supervision"
                             ? "bg-zinc-900/10 text-zinc-950"
                             : "bg-accent/10 text-accent"
-                        }`}
+                          }`}
                       >
                         {supervisionMetrics.totalStudents}
                       </span>
@@ -1515,16 +1511,14 @@ export default function AdminDashboard() {
                                 </td>
                                 <td className="px-4 py-3">
                                   <span
-                                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                                      student.is_active
+                                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${student.is_active
                                         ? "bg-success/15 text-success"
                                         : "bg-danger/15 text-danger"
-                                    }`}
+                                      }`}
                                   >
                                     <span
-                                      className={`h-1.5 w-1.5 rounded-full ${
-                                        student.is_active ? "bg-success" : "bg-danger"
-                                      }`}
+                                      className={`h-1.5 w-1.5 rounded-full ${student.is_active ? "bg-success" : "bg-danger"
+                                        }`}
                                     />
                                     {student.is_active ? "Active" : "Disabled"}
                                   </span>
@@ -1610,11 +1604,10 @@ export default function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => setCourseTab("content")}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all ${
-                    courseTab === "content"
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all ${courseTab === "content"
                       ? "bg-accent text-white shadow-soft"
                       : "bg-black/5 dark:bg-white/5 text-muted hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <FileText className="h-4 w-4" />
                   Materials & Tests
@@ -1622,11 +1615,10 @@ export default function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => setCourseTab("attendance")}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all ${
-                    courseTab === "attendance"
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all ${courseTab === "attendance"
                       ? "bg-accent text-white shadow-soft"
                       : "bg-black/5 dark:bg-white/5 text-muted hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <CalendarCheck className="h-4 w-4" />
                   QR Attendance
@@ -1769,11 +1761,10 @@ export default function AdminDashboard() {
                             <div>
                               <div className="flex items-center gap-2">
                                 <span
-                                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                                    sess.status === "active"
+                                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${sess.status === "active"
                                       ? "bg-success/15 text-success"
                                       : "bg-black/10 dark:bg-white/10 text-muted"
-                                  }`}
+                                    }`}
                                 >
                                   {sess.status === "active" ? "Active" : "Closed"}
                                 </span>
@@ -1828,561 +1819,556 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-                {/* MATERIALS MANAGER */}
-                <div className="space-y-4">
-                  <div className="mb-4 flex items-end justify-between gap-4">
-                    <h3 className="flex items-center gap-2 text-lg font-semibold text-muted-strong">
-                      <FileText className="h-5 w-5 text-accent" aria-hidden="true" />
-                      Course Materials
-                    </h3>
-                    <Button
-                      variant="subtle"
-                      size="sm"
-                      icon={UploadCloud}
-                      onClick={() => {
-                        setUploadError(null);
-                        setIsUploadModalOpen(true);
-                      }}
-                    >
-                      Upload PDF
-                    </Button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {selectedCourse?.materials.length === 0 ? (
-                      <EmptyState
+                  {/* MATERIALS MANAGER */}
+                  <div className="space-y-4">
+                    <div className="mb-4 flex items-end justify-between gap-4">
+                      <h3 className="flex items-center gap-2 text-lg font-semibold text-muted-strong">
+                        <FileText className="h-5 w-5 text-accent" aria-hidden="true" />
+                        Course Materials
+                      </h3>
+                      <Button
+                        variant="subtle"
+                        size="sm"
                         icon={UploadCloud}
-                        title="No materials uploaded"
-                        description="Upload a PDF and it appears here for every student in this course."
-                        action={
-                          <Button
-                            variant="subtle"
-                            size="sm"
-                            icon={UploadCloud}
-                            onClick={() => {
-                              setUploadError(null);
-                              setIsUploadModalOpen(true);
-                            }}
-                          >
-                            Upload PDF
-                          </Button>
-                        }
-                      />
-                    ) : (
-                      <AnimatePresence mode="popLayout">
-                        {selectedCourse?.materials.map((note) => (
-                          <motion.div
-                            key={note.id}
-                            initial={{ opacity: 0, y: 16 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="glass flex items-center justify-between rounded-xl border border-edge p-4"
-                          >
-                            <div className="flex min-w-0 items-center gap-3">
-                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-black/5 text-muted dark:bg-white/5">
-                                <FileText className="h-4 w-4" aria-hidden="true" />
-                              </div>
-                              <div className="min-w-0">
-                                <h4 className="truncate text-sm font-medium text-foreground">
-                                  {note.title}
-                                </h4>
-                                <p className="mt-0.5 text-[11px] tabular-nums text-muted">
-                                  Uploaded {note.date} · {note.size}
-                                </p>
-                              </div>
-                            </div>
-                            <IconButton
-                              icon={Trash2}
+                        onClick={() => {
+                          setUploadError(null);
+                          setIsUploadModalOpen(true);
+                        }}
+                      >
+                        Upload PDF
+                      </Button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {selectedCourse?.materials.length === 0 ? (
+                        <EmptyState
+                          icon={UploadCloud}
+                          title="No materials uploaded"
+                          description="Upload a PDF and it appears here for every student in this course."
+                          action={
+                            <Button
                               variant="subtle"
-                              label={`Delete ${note.title}`}
-                              onClick={() =>
-                                selectedCourse &&
-                                handleDeleteMaterial(selectedCourse.id, note.id)
-                              }
-                              className="ml-3"
-                            />
-                          </motion.div>
-                        ))}
-                      </AnimatePresence>
+                              size="sm"
+                              icon={UploadCloud}
+                              onClick={() => {
+                                setUploadError(null);
+                                setIsUploadModalOpen(true);
+                              }}
+                            >
+                              Upload PDF
+                            </Button>
+                          }
+                        />
+                      ) : (
+                        <AnimatePresence mode="popLayout">
+                          {selectedCourse?.materials.map((note) => (
+                            <motion.div
+                              key={note.id}
+                              initial={{ opacity: 0, y: 16 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="glass flex items-center justify-between rounded-xl border border-edge p-4"
+                            >
+                              <div className="flex min-w-0 items-center gap-3">
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-black/5 text-muted dark:bg-white/5">
+                                  <FileText className="h-4 w-4" aria-hidden="true" />
+                                </div>
+                                <div className="min-w-0">
+                                  <h4 className="truncate text-sm font-medium text-foreground">
+                                    {note.title}
+                                  </h4>
+                                  <p className="mt-0.5 text-[11px] tabular-nums text-muted">
+                                    Uploaded {note.date} · {note.size}
+                                  </p>
+                                </div>
+                              </div>
+                              <IconButton
+                                icon={Trash2}
+                                variant="subtle"
+                                label={`Delete ${note.title}`}
+                                onClick={() =>
+                                  selectedCourse &&
+                                  handleDeleteMaterial(selectedCourse.id, note.id)
+                                }
+                                className="ml-3"
+                              />
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* TEST MANAGER */}
+                  <div className="space-y-4">
+                    <div className="mb-4 flex items-center justify-between gap-4">
+                      <h3 className="flex items-center gap-2 text-lg font-semibold text-muted-strong">
+                        <Settings className="h-5 w-5 text-accent" aria-hidden="true" />
+                        Test Configuration
+                      </h3>
+                      <Button
+                        variant="subtle"
+                        size="sm"
+                        icon={Download}
+                        loading={isExporting}
+                        onClick={() => handleExportCsv()}
+                      >
+                        Export All Results
+                      </Button>
+                    </div>
+
+                    {!isConfiguringTest && (
+                      <Button onClick={() => setIsConfiguringTest(true)} className="w-full mb-6">Create New Test</Button>
                     )}
-                  </div>
-                </div>
 
-                {/* TEST MANAGER */}
-                <div className="space-y-4">
-                  <div className="mb-4 flex items-center justify-between gap-4">
-                    <h3 className="flex items-center gap-2 text-lg font-semibold text-muted-strong">
-                      <Settings className="h-5 w-5 text-accent" aria-hidden="true" />
-                      Test Configuration
-                    </h3>
-                    <Button
-                      variant="subtle"
-                      size="sm"
-                      icon={Download}
-                      loading={isExporting}
-                      onClick={() => handleExportCsv()}
-                    >
-                      Export All Results
-                    </Button>
-                  </div>
-
-                  {!isConfiguringTest && (
-                    <Button onClick={() => setIsConfiguringTest(true)} className="w-full mb-6">Create New Test</Button>
-                  )}
-
-                  {isConfiguringTest && (
-                    <motion.div {...riseIn()} className="card-outer mb-8">
-                      <div className="card-inner flex flex-col p-6">
-                        <div className="mb-4 flex items-center justify-between">
-                          <h4 className="text-lg font-bold text-foreground">Smart Test Parser</h4>
-                          <Button variant="subtle" size="sm" onClick={() => setIsConfiguringTest(false)}>Cancel</Button>
-                        </div>
-                        
-                        <div className="mb-6 grid grid-cols-2 gap-4">
-                          <Field label="Test Title" value={testTitle} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestTitle(e.target.value)} />
-                          <Field
-                            label="Duration (HH:MM:SS)"
-                            type="time"
-                            step="1"
-                            value={testDuration}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                              setTestDuration(e.target.value);
-                              setHasUserEditedDuration(true);
-                            }}
-                          />
-                          <Field label="Questions to Pool (empty for all)" value={testPoolSize} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestPoolSize(e.target.value)} />
-                          <Field label="Cooldown (HH:MM:SS)" type="time" step="1" value={testCooldown} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestCooldown(e.target.value)} />
-                          <Field label="Valid From (Date & Time, empty for immediately)" type="datetime-local" value={testValidFrom} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestValidFrom(e.target.value)} />
-              <Field label="Valid Until (Date & Time, empty for forever)" type="datetime-local" value={testValidity} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestValidity(e.target.value)} />
-                          <Field label="Max Takes (empty for unlimited)" type="number" min="1" value={testMaxTakes} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestMaxTakes(e.target.value)} />
-                        </div>
-                        <label className="mb-6 flex items-center gap-3 cursor-pointer p-4 rounded-xl border border-edge bg-background transition-colors hover:border-accent">
-                          <input type="checkbox" checked={testIsPracticeMode} onChange={(e) => setTestIsPracticeMode(e.target.checked)} className="h-5 w-5 accent-accent" />
-                          <div>
-                            <span className="font-semibold text-foreground">Practice Mode</span>
-                            <p className="text-xs text-muted">Students can take this test as many times as they want without being blocked, and scores will not be recorded.</p>
+                    {isConfiguringTest && (
+                      <motion.div {...riseIn()} className="card-outer mb-8">
+                        <div className="card-inner flex flex-col p-6">
+                          <div className="mb-4 flex items-center justify-between">
+                            <h4 className="text-lg font-bold text-foreground">Smart Test Parser</h4>
+                            <Button variant="subtle" size="sm" onClick={() => setIsConfiguringTest(false)}>Cancel</Button>
                           </div>
-                        </label>
 
-                        {parsedQuestions.length === 0 ? (
-                          <div className="space-y-5">
-                            {/* Generation Mode Switcher */}
-                            <div className="flex rounded-xl border border-edge bg-black/5 p-1 dark:bg-white/5">
-                              <button
-                                type="button"
-                                onClick={() => setQuestionMode("ai")}
-                                className={`flex-1 rounded-lg py-2.5 text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-                                  questionMode === "ai"
-                                    ? "bg-accent text-white shadow-xs"
-                                    : "text-muted hover:text-foreground"
-                                }`}
-                              >
-                                <BookOpenCheck className="h-4 w-4" />
-                                Question Bank Generator
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setQuestionMode("manual")}
-                                className={`flex-1 rounded-lg py-2.5 text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-                                  questionMode === "manual"
-                                    ? "bg-accent text-white shadow-xs"
-                                    : "text-muted hover:text-foreground"
-                                }`}
-                              >
-                                <FileText className="h-4 w-4" />
-                                Manual Paste / Text
-                              </button>
+                          <div className="mb-6 grid grid-cols-2 gap-4">
+                            <Field label="Test Title" value={testTitle} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestTitle(e.target.value)} />
+                            <Field
+                              label="Duration (HH:MM:SS)"
+                              type="time"
+                              step="1"
+                              value={testDuration}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                setTestDuration(e.target.value);
+                                setHasUserEditedDuration(true);
+                              }}
+                            />
+                            <Field label="Questions to Pool (empty for all)" value={testPoolSize} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestPoolSize(e.target.value)} />
+                            <Field label="Cooldown (HH:MM:SS)" type="time" step="1" value={testCooldown} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestCooldown(e.target.value)} />
+                            <Field label="Valid From (Date & Time, empty for immediately)" type="datetime-local" value={testValidFrom} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestValidFrom(e.target.value)} />
+                            <Field label="Valid Until (Date & Time, empty for forever)" type="datetime-local" value={testValidity} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestValidity(e.target.value)} />
+                            <Field label="Max Takes (empty for unlimited)" type="number" min="1" value={testMaxTakes} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestMaxTakes(e.target.value)} />
+                          </div>
+                          <label className="mb-6 flex items-center gap-3 cursor-pointer p-4 rounded-xl border border-edge bg-background transition-colors hover:border-accent">
+                            <input type="checkbox" checked={testIsPracticeMode} onChange={(e) => setTestIsPracticeMode(e.target.checked)} className="h-5 w-5 accent-accent" />
+                            <div>
+                              <span className="font-semibold text-foreground">Practice Mode</span>
+                              <p className="text-xs text-muted">Students can take this test as many times as they want without being blocked, and scores will not be recorded.</p>
                             </div>
+                          </label>
 
-                            {questionMode === "ai" ? (
-                              /* QUESTION BANK GENERATOR PANEL */
-                              <div className="space-y-5 rounded-2xl border border-accent/20 bg-accent-soft/5 p-5">
-                                <div className="flex items-center gap-3">
-                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                                    <BookOpenCheck className="h-5 w-5" />
-                                  </div>
-                                  <div>
-                                    <h5 className="text-sm font-bold text-foreground">
-                                      Question Bank Generator
-                                    </h5>
-                                    <p className="text-xs text-muted">
-                                      Generate multiple choice questions with verified answer keys directly from course lecture notes.
-                                    </p>
-                                  </div>
-                                </div>
+                          {parsedQuestions.length === 0 ? (
+                            <div className="space-y-5">
+                              {/* Generation Mode Switcher */}
+                              <div className="flex rounded-xl border border-edge bg-black/5 p-1 dark:bg-white/5">
+                                <button
+                                  type="button"
+                                  onClick={() => setQuestionMode("ai")}
+                                  className={`flex-1 rounded-lg py-2.5 text-xs font-semibold flex items-center justify-center gap-2 transition-all ${questionMode === "ai"
+                                      ? "bg-accent text-white shadow-xs"
+                                      : "text-muted hover:text-foreground"
+                                    }`}
+                                >
+                                  <BookOpenCheck className="h-4 w-4" />
+                                  Question Bank Generator
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setQuestionMode("manual")}
+                                  className={`flex-1 rounded-lg py-2.5 text-xs font-semibold flex items-center justify-center gap-2 transition-all ${questionMode === "manual"
+                                      ? "bg-accent text-white shadow-xs"
+                                      : "text-muted hover:text-foreground"
+                                    }`}
+                                >
+                                  <FileText className="h-4 w-4" />
+                                  Manual Paste / Text
+                                </button>
+                              </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                  {/* Document Source */}
-                                  <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold uppercase tracking-wider text-muted">
-                                      Source Lecture Document
-                                    </label>
-                                    <select
-                                      value={aiMaterialId}
-                                      onChange={(e) => setAiMaterialId(e.target.value)}
-                                      className="h-10 w-full rounded-xl border border-edge bg-background px-3 text-xs text-foreground focus:border-accent focus:outline-none"
-                                    >
-                                      {selectedCourse?.materials && selectedCourse.materials.length > 0 ? (
-                                        <>
-                                          <option value="auto">
-                                            Latest Course Document ({selectedCourse.materials[selectedCourse.materials.length - 1].title})
-                                          </option>
-                                          {selectedCourse.materials.map((m) => (
-                                            <option key={m.id} value={m.id}>
-                                              {m.title} ({m.size})
-                                            </option>
-                                          ))}
-                                        </>
-                                      ) : (
-                                        <option value="auto" disabled>
-                                          No materials in this course yet
-                                        </option>
-                                      )}
-                                      <option value="upload">+ Upload New Document (.pdf, .docx, .txt)</option>
-                                      <option value="paste">Directly Paste Lecture Notes Text</option>
-                                    </select>
-                                  </div>
-
-                                  {/* Difficulty Level */}
-                                  <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold uppercase tracking-wider text-muted">
-                                      Difficulty Level
-                                    </label>
-                                    <div className="flex rounded-xl border border-edge bg-black/5 p-1 dark:bg-white/5">
-                                      {(["easy", "medium", "hard", "mixed"] as const).map((lvl) => (
-                                        <button
-                                          key={lvl}
-                                          type="button"
-                                          onClick={() => setAiDifficulty(lvl)}
-                                          className={`flex-1 rounded-lg py-2 text-xs font-medium capitalize transition-all ${
-                                            aiDifficulty === lvl
-                                              ? "bg-accent text-white shadow-xs font-semibold"
-                                              : "text-muted hover:text-foreground"
-                                          }`}
-                                        >
-                                          {lvl}
-                                        </button>
-                                      ))}
+                              {questionMode === "ai" ? (
+                                /* QUESTION BANK GENERATOR PANEL */
+                                <div className="space-y-5 rounded-2xl border border-accent/20 bg-accent-soft/5 p-5">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                                      <BookOpenCheck className="h-5 w-5" />
                                     </div>
-                                    <p className="text-[11px] text-muted">
-                                      {aiDifficulty === "easy" && "Recall & direct definitions from text."}
-                                      {aiDifficulty === "medium" && "Conceptual comprehension & application."}
-                                      {aiDifficulty === "hard" && "Critical thinking & scenario analysis."}
-                                      {aiDifficulty === "mixed" && "Balanced: 30% Easy, 50% Medium, 20% Hard."}
-                                    </p>
+                                    <div>
+                                      <h5 className="text-sm font-bold text-foreground">
+                                        Question Bank Generator
+                                      </h5>
+                                      <p className="text-xs text-muted">
+                                        Generate multiple choice questions with verified answer keys directly from course lecture notes.
+                                      </p>
+                                    </div>
                                   </div>
-                                </div>
 
-                                {/* Dynamic File Upload when "upload" is chosen */}
-                                {aiMaterialId === "upload" && (
-                                  <div className="p-3.5 rounded-xl border border-edge bg-background space-y-2">
-                                    <label className="text-xs font-semibold text-muted">Select File from Computer</label>
-                                    <div className="flex items-center gap-3">
-                                      <input
-                                        type="file"
-                                        ref={aiFileInputRef}
-                                        accept=".pdf,.docx,.txt"
-                                        onChange={(e) => setAiUploadedFile(e.target.files?.[0] || null)}
-                                        className="hidden"
-                                      />
-                                      <Button
-                                        type="button"
-                                        variant="glass"
-                                        size="sm"
-                                        icon={UploadCloud}
-                                        onClick={() => aiFileInputRef.current?.click()}
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {/* Document Source */}
+                                    <div className="space-y-1.5">
+                                      <label className="text-xs font-semibold uppercase tracking-wider text-muted">
+                                        Source Lecture Document
+                                      </label>
+                                      <select
+                                        value={aiMaterialId}
+                                        onChange={(e) => setAiMaterialId(e.target.value)}
+                                        className="h-10 w-full rounded-xl border border-edge bg-background px-3 text-xs text-foreground focus:border-accent focus:outline-none"
                                       >
-                                        {aiUploadedFile ? aiUploadedFile.name : "Choose .pdf, .docx, or .txt"}
-                                      </Button>
-                                      {aiUploadedFile && (
-                                        <span className="text-xs text-success font-medium">
-                                          Ready ({(aiUploadedFile.size / 1024).toFixed(0)} KB)
-                                        </span>
-                                      )}
+                                        {selectedCourse?.materials && selectedCourse.materials.length > 0 ? (
+                                          <>
+                                            <option value="auto">
+                                              Latest Course Document ({selectedCourse.materials[selectedCourse.materials.length - 1].title})
+                                            </option>
+                                            {selectedCourse.materials.map((m) => (
+                                              <option key={m.id} value={m.id}>
+                                                {m.title} ({m.size})
+                                              </option>
+                                            ))}
+                                          </>
+                                        ) : (
+                                          <option value="auto" disabled>
+                                            No materials in this course yet
+                                          </option>
+                                        )}
+                                        <option value="upload">+ Upload New Document (.pdf, .docx, .txt)</option>
+                                        <option value="paste">Directly Paste Lecture Notes Text</option>
+                                      </select>
                                     </div>
-                                  </div>
-                                )}
 
-                                {/* Dynamic Textarea when "paste" is chosen */}
-                                {aiMaterialId === "paste" && (
-                                  <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold text-muted">Paste Lecture Notes Text</label>
-                                    <textarea
-                                      rows={5}
-                                      value={rawQuestionsText}
-                                      onChange={(e) => setRawQuestionsText(e.target.value)}
-                                      placeholder="Paste chapter text or notes here..."
-                                      className="w-full rounded-xl border border-edge bg-background p-3 text-xs text-foreground focus:border-accent focus:outline-none font-mono"
-                                    />
-                                  </div>
-                                )}
-
-                                {/* Question Count and Focus Topic */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                  <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold uppercase tracking-wider text-muted">
-                                      Number of Questions
-                                    </label>
-                                    <div className="flex items-center gap-2">
-                                      <div className="flex flex-1 rounded-xl border border-edge bg-black/5 p-1 dark:bg-white/5">
-                                        {[10, 20, 30, 50].map((count) => (
+                                    {/* Difficulty Level */}
+                                    <div className="space-y-1.5">
+                                      <label className="text-xs font-semibold uppercase tracking-wider text-muted">
+                                        Difficulty Level
+                                      </label>
+                                      <div className="flex rounded-xl border border-edge bg-black/5 p-1 dark:bg-white/5">
+                                        {(["easy", "medium", "hard", "mixed"] as const).map((lvl) => (
                                           <button
-                                            key={count}
+                                            key={lvl}
                                             type="button"
-                                            onClick={() => setAiQuestionCount(count)}
-                                            className={`flex-1 rounded-lg py-2 text-xs font-medium transition-all ${
-                                              aiQuestionCount === count
+                                            onClick={() => setAiDifficulty(lvl)}
+                                            className={`flex-1 rounded-lg py-2 text-xs font-medium capitalize transition-all ${aiDifficulty === lvl
                                                 ? "bg-accent text-white shadow-xs font-semibold"
                                                 : "text-muted hover:text-foreground"
-                                            }`}
+                                              }`}
                                           >
-                                            {count}
+                                            {lvl}
                                           </button>
                                         ))}
                                       </div>
-                                      <div className="relative w-20 shrink-0">
-                                        <input
-                                          type="number"
-                                          min={5}
-                                          max={50}
-                                          value={aiQuestionCount}
-                                          onChange={(e) =>
-                                            setAiQuestionCount(
-                                              Math.max(5, Math.min(50, parseInt(e.target.value, 10) || 5))
-                                            )
-                                          }
-                                          className="h-10 w-full rounded-xl border border-edge bg-black/5 dark:bg-white/5 px-2 text-center text-xs font-bold text-foreground focus:border-accent focus:bg-background focus:outline-none"
-                                          placeholder="Qty"
-                                          title="Custom question count"
-                                        />
-                                      </div>
+                                      <p className="text-[11px] text-muted">
+                                        {aiDifficulty === "easy" && "Recall & direct definitions from text."}
+                                        {aiDifficulty === "medium" && "Conceptual comprehension & application."}
+                                        {aiDifficulty === "hard" && "Critical thinking & scenario analysis."}
+                                        {aiDifficulty === "mixed" && "Balanced: 30% Easy, 50% Medium, 20% Hard."}
+                                      </p>
                                     </div>
                                   </div>
 
-                                  <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold uppercase tracking-wider text-muted">
-                                      Specific Focus / Scope (Optional)
-                                    </label>
+                                  {/* Dynamic File Upload when "upload" is chosen */}
+                                  {aiMaterialId === "upload" && (
+                                    <div className="p-3.5 rounded-xl border border-edge bg-background space-y-2">
+                                      <label className="text-xs font-semibold text-muted">Select File from Computer</label>
+                                      <div className="flex items-center gap-3">
+                                        <input
+                                          type="file"
+                                          ref={aiFileInputRef}
+                                          accept=".pdf,.docx,.txt"
+                                          onChange={(e) => setAiUploadedFile(e.target.files?.[0] || null)}
+                                          className="hidden"
+                                        />
+                                        <Button
+                                          type="button"
+                                          variant="glass"
+                                          size="sm"
+                                          icon={UploadCloud}
+                                          onClick={() => aiFileInputRef.current?.click()}
+                                        >
+                                          {aiUploadedFile ? aiUploadedFile.name : "Choose .pdf, .docx, or .txt"}
+                                        </Button>
+                                        {aiUploadedFile && (
+                                          <span className="text-xs text-success font-medium">
+                                            Ready ({(aiUploadedFile.size / 1024).toFixed(0)} KB)
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Dynamic Textarea when "paste" is chosen */}
+                                  {aiMaterialId === "paste" && (
+                                    <div className="space-y-1.5">
+                                      <label className="text-xs font-semibold text-muted">Paste Lecture Notes Text</label>
+                                      <textarea
+                                        rows={5}
+                                        value={rawQuestionsText}
+                                        onChange={(e) => setRawQuestionsText(e.target.value)}
+                                        placeholder="Paste chapter text or notes here..."
+                                        className="w-full rounded-xl border border-edge bg-background p-3 text-xs text-foreground focus:border-accent focus:outline-none font-mono"
+                                      />
+                                    </div>
+                                  )}
+
+                                  {/* Question Count and Focus Topic */}
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                      <label className="text-xs font-semibold uppercase tracking-wider text-muted">
+                                        Number of Questions
+                                      </label>
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex flex-1 rounded-xl border border-edge bg-black/5 p-1 dark:bg-white/5">
+                                          {[10, 20, 30, 50].map((count) => (
+                                            <button
+                                              key={count}
+                                              type="button"
+                                              onClick={() => setAiQuestionCount(count)}
+                                              className={`flex-1 rounded-lg py-2 text-xs font-medium transition-all ${aiQuestionCount === count
+                                                  ? "bg-accent text-white shadow-xs font-semibold"
+                                                  : "text-muted hover:text-foreground"
+                                                }`}
+                                            >
+                                              {count}
+                                            </button>
+                                          ))}
+                                        </div>
+                                        <div className="relative w-20 shrink-0">
+                                          <input
+                                            type="number"
+                                            min={5}
+                                            max={50}
+                                            value={aiQuestionCount}
+                                            onChange={(e) =>
+                                              setAiQuestionCount(
+                                                Math.max(5, Math.min(50, parseInt(e.target.value, 10) || 5))
+                                              )
+                                            }
+                                            className="h-10 w-full rounded-xl border border-edge bg-black/5 dark:bg-white/5 px-2 text-center text-xs font-bold text-foreground focus:border-accent focus:bg-background focus:outline-none"
+                                            placeholder="Qty"
+                                            title="Custom question count"
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                      <label className="text-xs font-semibold uppercase tracking-wider text-muted">
+                                        Specific Focus / Scope (Optional)
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={aiFocusTopic}
+                                        onChange={(e) => setAiFocusTopic(e.target.value)}
+                                        placeholder="e.g. Chapter 2, Enzyme Kinetics, Clinical Scenarios"
+                                        className="h-10 w-full rounded-xl border border-edge bg-background px-3 text-xs text-foreground focus:border-accent focus:outline-none"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <Button
+                                    type="button"
+                                    variant="primary"
+                                    icon={BookOpenCheck}
+                                    loading={isGeneratingAi}
+                                    onClick={handleGenerateAiQuestions}
+                                    className="w-full h-11 text-sm font-semibold rounded-xl"
+                                  >
+                                    {isGeneratingAi ? "Generating..." : "Generate"}
+                                  </Button>
+                                </div>
+                              ) : (
+                                /* MANUAL PARSER PANEL */
+                                <div className="space-y-4">
+                                  <textarea
+                                    className="w-full rounded-xl border border-edge bg-background p-4 text-sm text-foreground focus:border-accent focus:outline-none"
+                                    rows={8}
+                                    placeholder="Paste questions here... e.g.&#10;1. What is 2+2?&#10;A) 3&#10;B) 4&#10;Answer: B"
+                                    value={rawQuestionsText}
+                                    onChange={(e) => setRawQuestionsText(e.target.value)}
+                                  />
+                                  <div className="flex gap-4">
                                     <input
-                                      type="text"
-                                      value={aiFocusTopic}
-                                      onChange={(e) => setAiFocusTopic(e.target.value)}
-                                      placeholder="e.g. Chapter 2, Enzyme Kinetics, Clinical Scenarios"
-                                      className="h-10 w-full rounded-xl border border-edge bg-background px-3 text-xs text-foreground focus:border-accent focus:outline-none"
+                                      type="file"
+                                      accept="application/pdf"
+                                      ref={pdfInputRef}
+                                      onChange={handlePdfParseUpload}
+                                      className="hidden"
                                     />
+                                    <Button
+                                      variant="subtle"
+                                      className="flex-1"
+                                      onClick={() => pdfInputRef.current?.click()}
+                                      loading={isParsingPdf}
+                                      disabled={isParsingPdf}
+                                    >
+                                      {isParsingPdf ? "Extracting..." : "Upload Questions PDF"}
+                                    </Button>
+                                    <Button className="flex-1" onClick={handleParseQuestions} disabled={!rawQuestionsText.trim()}>
+                                      Parse Questions
+                                    </Button>
                                   </div>
                                 </div>
+                              )}
+                            </div>
+                          ) : (
+                            /* QUESTIONS PREVIEW & EDIT LIST */
+                            <div className="space-y-5">
+                              <div className="flex items-center justify-between pb-3 border-b border-edge flex-wrap gap-2">
+                                <span className="text-xs font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
+                                  <CheckCircle2 className="w-4 h-4 text-success" />
+                                  {parsedQuestions.length} Questions Ready in Bank
+                                </span>
+                                <span className="text-xs text-muted">
+                                  Randomizer will draw {testPoolSize ? testPoolSize : parsedQuestions.length} per student
+                                </span>
+                              </div>
 
-                                <Button
-                                  type="button"
-                                  variant="primary"
-                                  icon={BookOpenCheck}
-                                  loading={isGeneratingAi}
-                                  onClick={handleGenerateAiQuestions}
-                                  className="w-full h-11 text-sm font-semibold rounded-xl"
-                                >
-                                  {isGeneratingAi ? "Generating..." : "Generate"}
+                              <div className="max-h-80 overflow-y-auto space-y-3.5 rounded-xl border border-edge bg-background p-4">
+                                {parsedQuestions.map((q, i) => (
+                                  <div key={q.id || i} className="border-b border-edge pb-3.5 last:border-0">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <p className="font-medium text-foreground text-sm">
+                                        <span className="text-accent font-bold mr-1">{i + 1}.</span> {q.text}
+                                      </p>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteParsedQuestion(i)}
+                                        className="text-muted hover:text-danger p-1 rounded transition-colors shrink-0"
+                                        title="Remove question"
+                                        aria-label={`Remove question ${i + 1}`}
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                    <ul className="mt-2 space-y-1 pl-4 text-xs">
+                                      {q.options.map((opt, j) => {
+                                        const isCorrect = opt === q.correct || opt.includes(q.correct);
+                                        return (
+                                          <li
+                                            key={j}
+                                            className={`flex items-center gap-2 p-1.5 rounded-lg ${isCorrect
+                                                ? "font-semibold text-success bg-success/10 border border-success/20"
+                                                : "text-muted"
+                                              }`}
+                                          >
+                                            <span className="font-mono text-[10px] font-bold">
+                                              {String.fromCharCode(65 + j)}.
+                                            </span>
+                                            <span>{opt}</span>
+                                            {isCorrect && (
+                                              <span className="ml-auto text-[9px] uppercase font-bold text-success">
+                                                Correct
+                                              </span>
+                                            )}
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
+                                  </div>
+                                ))}
+                              </div>
+
+                              <div className="flex gap-3">
+                                <Button variant="subtle" className="flex-1" onClick={() => setParsedQuestions([])}>
+                                  Discard / Regenerate
+                                </Button>
+                                <Button className="flex-1" onClick={handleSaveTest}>
+                                  Publish Test to Course
                                 </Button>
                               </div>
-                            ) : (
-                              /* MANUAL PARSER PANEL */
-                              <div className="space-y-4">
-                                <textarea
-                                  className="w-full rounded-xl border border-edge bg-background p-4 text-sm text-foreground focus:border-accent focus:outline-none"
-                                  rows={8}
-                                  placeholder="Paste questions here... e.g.&#10;1. What is 2+2?&#10;A) 3&#10;B) 4&#10;Answer: B"
-                                  value={rawQuestionsText}
-                                  onChange={(e) => setRawQuestionsText(e.target.value)}
-                                />
-                                <div className="flex gap-4">
-                                  <input 
-                                    type="file" 
-                                    accept="application/pdf" 
-                                    ref={pdfInputRef} 
-                                    onChange={handlePdfParseUpload} 
-                                    className="hidden" 
-                                  />
-                                  <Button 
-                                    variant="subtle" 
-                                    className="flex-1" 
-                                    onClick={() => pdfInputRef.current?.click()}
-                                    loading={isParsingPdf}
-                                    disabled={isParsingPdf}
-                                  >
-                                    {isParsingPdf ? "Extracting..." : "Upload Questions PDF"}
-                                  </Button>
-                                  <Button className="flex-1" onClick={handleParseQuestions} disabled={!rawQuestionsText.trim()}>
-                                    Parse Questions
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          /* QUESTIONS PREVIEW & EDIT LIST */
-                          <div className="space-y-5">
-                            <div className="flex items-center justify-between pb-3 border-b border-edge flex-wrap gap-2">
-                              <span className="text-xs font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
-                                <CheckCircle2 className="w-4 h-4 text-success" />
-                                {parsedQuestions.length} Questions Ready in Bank
-                              </span>
-                              <span className="text-xs text-muted">
-                                Randomizer will draw {testPoolSize ? testPoolSize : parsedQuestions.length} per student
-                              </span>
                             </div>
-
-                            <div className="max-h-80 overflow-y-auto space-y-3.5 rounded-xl border border-edge bg-background p-4">
-                              {parsedQuestions.map((q, i) => (
-                                <div key={q.id || i} className="border-b border-edge pb-3.5 last:border-0">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <p className="font-medium text-foreground text-sm">
-                                      <span className="text-accent font-bold mr-1">{i + 1}.</span> {q.text}
-                                    </p>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteParsedQuestion(i)}
-                                      className="text-muted hover:text-danger p-1 rounded transition-colors shrink-0"
-                                      title="Remove question"
-                                      aria-label={`Remove question ${i + 1}`}
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
-                                  <ul className="mt-2 space-y-1 pl-4 text-xs">
-                                    {q.options.map((opt, j) => {
-                                      const isCorrect = opt === q.correct || opt.includes(q.correct);
-                                      return (
-                                        <li
-                                          key={j}
-                                          className={`flex items-center gap-2 p-1.5 rounded-lg ${
-                                            isCorrect
-                                              ? "font-semibold text-success bg-success/10 border border-success/20"
-                                              : "text-muted"
-                                          }`}
-                                        >
-                                          <span className="font-mono text-[10px] font-bold">
-                                            {String.fromCharCode(65 + j)}.
-                                          </span>
-                                          <span>{opt}</span>
-                                          {isCorrect && (
-                                            <span className="ml-auto text-[9px] uppercase font-bold text-success">
-                                              Correct
-                                            </span>
-                                          )}
-                                        </li>
-                                      );
-                                    })}
-                                  </ul>
-                                </div>
-                              ))}
-                            </div>
-
-                            <div className="flex gap-3">
-                              <Button variant="subtle" className="flex-1" onClick={() => setParsedQuestions([])}>
-                                Discard / Regenerate
-                              </Button>
-                              <Button className="flex-1" onClick={handleSaveTest}>
-                                Publish Test to Course
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  <div className="space-y-4">
-                    {(!selectedCourse?.activeTests || selectedCourse.activeTests.length === 0) && !selectedCourse?.activeTest ? (
-                      <motion.div {...riseIn()} className="glass border border-dashed border-accent/30 p-8">
-                        <EmptyState
-                          icon={PlayCircle}
-                          title="No active tests"
-                          description="You have no running tests for this course."
-                          variant="dashed"
-                        />
+                          )}
+                        </div>
                       </motion.div>
-                    ) : (
-                      Array.from(new Map(
-                        [...(selectedCourse?.activeTest ? [selectedCourse.activeTest] : []), ...(selectedCourse?.activeTests || [])].map(t => [t.id, t])
-                      ).values()).map((test) => (
-                        <motion.div key={test.id} {...riseIn()} className="card-outer">
-                          <div className="card-inner flex flex-col p-6">
-                            <div className="mb-6 flex items-start justify-between gap-4">
-                              <div>
-                                <div className="mb-1 flex items-center gap-2">
-                                  <span
-                                    className="h-2 w-2 animate-pulse rounded-full bg-success"
-                                    aria-hidden="true"
-                                  />
-                                  <span className="text-xs font-bold uppercase tracking-wide text-success">
-                                    Live Now
-                                  </span>
-                                  {test.isPracticeMode && (
-                                    <span className="ml-2 rounded-full border border-warning/50 bg-warning/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warning">
-                                      Practice
-                                    </span>
-                                  )}
-                                </div>
-                                <h4 className="text-lg font-bold text-foreground">
-                                  {test.title}
-                                </h4>
-                                <p className="mt-1 text-sm font-medium text-accent">
-                                  {test.questions} Questions · {test.duration}
-                                </p>
-                              </div>
-                              <div className="rounded-lg bg-accent-soft p-2 text-accent">
-                                <PlayCircle className="h-5 w-5" aria-hidden="true" />
-                              </div>
-                            </div>
-
-                            <div className="mt-auto flex flex-col gap-3">
-                              <Button
-                                variant="subtle"
-                                icon={Eye}
-                                onClick={() => handleViewResults(test.title, test)}
-                              >
-                                View Results
-                              </Button>
-                              <Button
-                                variant="subtle"
-                                icon={AlertTriangle}
-                                onClick={() => handleViewBlocks(test.title)}
-                              >
-                                Blocked Attempts
-                              </Button>
-                              <Button
-                                variant="subtle"
-                                icon={Download}
-                                loading={isExporting}
-                                onClick={() => handleExportCsv(test.title)}
-                              >
-                                Export Results CSV
-                              </Button>
-                              <Button
-                                variant="subtle"
-                                icon={Settings}
-                                onClick={() => openEditTestModal(test)}
-                              >
-                                Edit Configuration
-                              </Button>
-                              <Button
-                                variant="danger"
-                                icon={Shield}
-                                onClick={() =>
-                                  selectedCourse && handleEndTest(selectedCourse.id, test.id)
-                                }
-                              >
-                                End Test Early
-                              </Button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))
                     )}
+
+                    <div className="space-y-4">
+                      {(!selectedCourse?.activeTests || selectedCourse.activeTests.length === 0) && !selectedCourse?.activeTest ? (
+                        <motion.div {...riseIn()} className="glass border border-dashed border-accent/30 p-8">
+                          <EmptyState
+                            icon={PlayCircle}
+                            title="No active tests"
+                            description="You have no running tests for this course."
+                            variant="dashed"
+                          />
+                        </motion.div>
+                      ) : (
+                        Array.from(new Map(
+                          [...(selectedCourse?.activeTest ? [selectedCourse.activeTest] : []), ...(selectedCourse?.activeTests || [])].map(t => [t.id, t])
+                        ).values()).map((test) => (
+                          <motion.div key={test.id} {...riseIn()} className="card-outer">
+                            <div className="card-inner flex flex-col p-6">
+                              <div className="mb-6 flex items-start justify-between gap-4">
+                                <div>
+                                  <div className="mb-1 flex items-center gap-2">
+                                    <span
+                                      className="h-2 w-2 animate-pulse rounded-full bg-success"
+                                      aria-hidden="true"
+                                    />
+                                    <span className="text-xs font-bold uppercase tracking-wide text-success">
+                                      Live Now
+                                    </span>
+                                    {test.isPracticeMode && (
+                                      <span className="ml-2 rounded-full border border-warning/50 bg-warning/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warning">
+                                        Practice
+                                      </span>
+                                    )}
+                                  </div>
+                                  <h4 className="text-lg font-bold text-foreground">
+                                    {test.title}
+                                  </h4>
+                                  <p className="mt-1 text-sm font-medium text-accent">
+                                    {test.questions} Questions · {test.duration}
+                                  </p>
+                                </div>
+                                <div className="rounded-lg bg-accent-soft p-2 text-accent">
+                                  <PlayCircle className="h-5 w-5" aria-hidden="true" />
+                                </div>
+                              </div>
+
+                              <div className="mt-auto flex flex-col gap-3">
+                                <Button
+                                  variant="subtle"
+                                  icon={Eye}
+                                  onClick={() => handleViewResults(test.title, test)}
+                                >
+                                  View Results
+                                </Button>
+                                <Button
+                                  variant="subtle"
+                                  icon={AlertTriangle}
+                                  onClick={() => handleViewBlocks(test.title)}
+                                >
+                                  Blocked Attempts
+                                </Button>
+                                <Button
+                                  variant="subtle"
+                                  icon={Download}
+                                  loading={isExporting}
+                                  onClick={() => handleExportCsv(test.title)}
+                                >
+                                  Export Results CSV
+                                </Button>
+                                <Button
+                                  variant="subtle"
+                                  icon={Settings}
+                                  onClick={() => openEditTestModal(test)}
+                                >
+                                  Edit Configuration
+                                </Button>
+                                <Button
+                                  variant="danger"
+                                  icon={Shield}
+                                  onClick={() =>
+                                    selectedCourse && handleEndTest(selectedCourse.id, test.id)
+                                  }
+                                >
+                                  End Test Early
+                                </Button>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </motion.div>
+              )}
+            </motion.div>
           )}
         </AnimatePresence>
 
@@ -2625,11 +2611,10 @@ export default function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => setResultsTab("scores")}
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold transition-all ${
-                    resultsTab === "scores"
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold transition-all ${resultsTab === "scores"
                       ? "bg-accent text-white shadow-xs"
                       : "text-muted hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <Users className="h-4 w-4" />
                   Student Scores ({currentResults.length})
@@ -2637,11 +2622,10 @@ export default function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => setResultsTab("analysis")}
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold transition-all ${
-                    resultsTab === "analysis"
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold transition-all ${resultsTab === "analysis"
                       ? "bg-accent text-white shadow-xs"
                       : "text-muted hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <BarChart3 className="h-4 w-4" />
                   Item Analysis & Quality ({itemAnalysis.length})
@@ -2705,13 +2689,12 @@ export default function AdminDashboard() {
                                 </td>
                                 <td className="px-4 py-3 text-right">
                                   <span
-                                    className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold tabular-nums ${
-                                      pct >= 70
+                                    className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold tabular-nums ${pct >= 70
                                         ? "bg-success/10 text-success"
                                         : pct >= 50
-                                        ? "bg-warning/10 text-warning"
-                                        : "bg-danger/10 text-danger"
-                                    }`}
+                                          ? "bg-warning/10 text-warning"
+                                          : "bg-danger/10 text-danger"
+                                      }`}
                                   >
                                     {pct}%
                                   </span>
@@ -2719,11 +2702,11 @@ export default function AdminDashboard() {
                                 <td className="px-4 py-3 text-right text-xs text-muted tabular-nums">
                                   {res.completedAt?.seconds
                                     ? new Date(res.completedAt.seconds * 1000).toLocaleDateString(undefined, {
-                                        month: "short",
-                                        day: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
                                     : "Recorded"}
                                 </td>
                               </tr>
@@ -2757,22 +2740,20 @@ export default function AdminDashboard() {
                           <button
                             type="button"
                             onClick={() => setAnalysisFilter("all")}
-                            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                              analysisFilter === "all"
+                            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${analysisFilter === "all"
                                 ? "bg-foreground text-background"
                                 : "bg-black/5 dark:bg-white/5 text-muted hover:text-foreground"
-                            }`}
+                              }`}
                           >
                             All ({itemAnalysis.length})
                           </button>
                           <button
                             type="button"
                             onClick={() => setAnalysisFilter("flagged")}
-                            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                              analysisFilter === "flagged"
+                            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${analysisFilter === "flagged"
                                 ? "bg-danger text-white"
                                 : "bg-danger/10 text-danger hover:bg-danger/20"
-                            }`}
+                              }`}
                           >
                             <AlertTriangle className="h-3 w-3" />
                             Needs Review ({cohortMetrics.flaggedCount})
@@ -2780,11 +2761,10 @@ export default function AdminDashboard() {
                           <button
                             type="button"
                             onClick={() => setAnalysisFilter("optimal")}
-                            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                              analysisFilter === "optimal"
+                            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${analysisFilter === "optimal"
                                 ? "bg-success text-white"
                                 : "bg-success/10 text-success hover:bg-success/20"
-                            }`}
+                              }`}
                           >
                             <CheckCircle2 className="h-3 w-3" />
                             Optimal ({cohortMetrics.optimalCount})
@@ -2792,11 +2772,10 @@ export default function AdminDashboard() {
                           <button
                             type="button"
                             onClick={() => setAnalysisFilter("mastery")}
-                            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                              analysisFilter === "mastery"
+                            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${analysisFilter === "mastery"
                                 ? "bg-accent text-white"
                                 : "bg-accent/10 text-accent hover:bg-accent/20"
-                            }`}
+                              }`}
                           >
                             <TrendingUp className="h-3 w-3" />
                             High Mastery ({cohortMetrics.masteryCount})
@@ -2826,11 +2805,10 @@ export default function AdminDashboard() {
                             return (
                               <div
                                 key={item.id || item.index}
-                                className={`rounded-xl border p-4 transition-all ${
-                                  item.isFlagged
+                                className={`rounded-xl border p-4 transition-all ${item.isFlagged
                                     ? "border-danger/30 bg-danger/[0.02]"
                                     : "border-edge bg-background"
-                                }`}
+                                  }`}
                               >
                                 {/* HEADER */}
                                 <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -2839,13 +2817,12 @@ export default function AdminDashboard() {
                                       Q{item.index}
                                     </span>
                                     <span
-                                      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${
-                                        item.classification === "hard"
+                                      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${item.classification === "hard"
                                           ? "bg-danger/10 text-danger"
                                           : item.classification === "mastery"
-                                          ? "bg-accent/10 text-accent"
-                                          : "bg-success/10 text-success"
-                                      }`}
+                                            ? "bg-accent/10 text-accent"
+                                            : "bg-success/10 text-success"
+                                        }`}
                                     >
                                       {item.classification === "hard" ? (
                                         <AlertTriangle className="h-3 w-3" />
@@ -2858,8 +2835,8 @@ export default function AdminDashboard() {
                                       {item.classification === "hard"
                                         ? "Hard / Low Facility"
                                         : item.classification === "mastery"
-                                        ? "High Mastery"
-                                        : "Optimal Range"}
+                                          ? "High Mastery"
+                                          : "Optimal Range"}
                                     </span>
 
                                     {item.distractorTrapOption && (
@@ -2892,35 +2869,32 @@ export default function AdminDashboard() {
                                     return (
                                       <div
                                         key={optIdx}
-                                        className={`rounded-lg border p-2.5 transition-colors ${
-                                          isCorrect
+                                        className={`rounded-lg border p-2.5 transition-colors ${isCorrect
                                             ? "border-success/40 bg-success/[0.04]"
                                             : isTrap
-                                            ? "border-warning/40 bg-warning/[0.04]"
-                                            : "border-edge/50 bg-black/[0.01] dark:bg-white/[0.01]"
-                                        }`}
+                                              ? "border-warning/40 bg-warning/[0.04]"
+                                              : "border-edge/50 bg-black/[0.01] dark:bg-white/[0.01]"
+                                          }`}
                                       >
                                         <div className="flex items-center justify-between text-xs mb-1.5">
                                           <div className="flex items-center gap-2 min-w-0 pr-2">
                                             <span
-                                              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded text-[10px] font-bold ${
-                                                isCorrect
+                                              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded text-[10px] font-bold ${isCorrect
                                                   ? "bg-success text-white"
                                                   : isTrap
-                                                  ? "bg-warning text-black"
-                                                  : "bg-muted/20 text-muted"
-                                              }`}
+                                                    ? "bg-warning text-black"
+                                                    : "bg-muted/20 text-muted"
+                                                }`}
                                             >
                                               {letter}
                                             </span>
                                             <span
-                                              className={`truncate font-medium ${
-                                                isCorrect
+                                              className={`truncate font-medium ${isCorrect
                                                   ? "font-bold text-success"
                                                   : isTrap
-                                                  ? "font-semibold text-warning"
-                                                  : "text-foreground"
-                                              }`}
+                                                    ? "font-semibold text-warning"
+                                                    : "text-foreground"
+                                                }`}
                                             >
                                               {opt}
                                             </span>
@@ -2946,13 +2920,12 @@ export default function AdminDashboard() {
                                         {/* PROGRESS BAR */}
                                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/5 dark:bg-white/5">
                                           <div
-                                            className={`h-full rounded-full transition-all duration-300 ${
-                                              isCorrect
+                                            className={`h-full rounded-full transition-all duration-300 ${isCorrect
                                                 ? "bg-success"
                                                 : isTrap
-                                                ? "bg-warning"
-                                                : "bg-muted"
-                                            }`}
+                                                  ? "bg-warning"
+                                                  : "bg-muted"
+                                              }`}
                                             style={{ width: `${Math.max(optPct, 0)}%` }}
                                           />
                                         </div>
@@ -2970,8 +2943,8 @@ export default function AdminDashboard() {
                                       {item.classification === "hard" && item.distractorTrapOption
                                         ? `Only ${item.pValue}% answered correctly. A large share of students (${item.distractorTrapPct}%) were trapped by distractor "${item.distractorTrapOption}". Review wording or revisit this concept in class.`
                                         : item.classification === "hard"
-                                        ? `Low facility index (${item.pValue}%). This item proved significantly challenging for the cohort. Recommend topic remediation.`
-                                        : `Distractor trap detected: "${item.distractorTrapOption}" was chosen by ${item.distractorTrapPct}% of students. Verify if this option is inadvertently ambiguous.`}
+                                          ? `Low facility index (${item.pValue}%). This item proved significantly challenging for the cohort. Recommend topic remediation.`
+                                          : `Distractor trap detected: "${item.distractorTrapOption}" was chosen by ${item.distractorTrapPct}% of students. Verify if this option is inadvertently ambiguous.`}
                                     </div>
                                   </div>
                                 )}
@@ -3019,7 +2992,7 @@ export default function AdminDashboard() {
                         <td className="px-4 py-3 font-mono text-danger">{block.studentId}</td>
                         <td className="px-4 py-3 capitalize">
                           {block.reason === "strict" ? "Retake Not Allowed" :
-                           block.reason === "cooldown" ? "Cooldown Active" : block.reason}
+                            block.reason === "cooldown" ? "Cooldown Active" : block.reason}
                         </td>
                         <td className="px-4 py-3 text-right text-muted">
                           {block.timestamp?.seconds
@@ -3167,7 +3140,7 @@ export default function AdminDashboard() {
                   <div>
                     <h4 className="text-sm font-bold text-foreground">Two-Factor Authenticator (2FA)</h4>
                     <p className="text-xs text-muted leading-relaxed">
-                      Pair or reset Google Authenticator / Apple Passwords. Protected by Master Password (619000).
+                      Pair or reset Google Authenticator / Apple Passwords. Protected by Master Password.
                     </p>
                   </div>
                 </div>

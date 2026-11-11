@@ -71,8 +71,9 @@ export function AttendanceProjectorModal({
   const [manualStudentName, setManualStudentName] = useState("");
   const [isSavingManual, setIsSavingManual] = useState(false);
 
-  // Origin for QR URL
+  // Origin & Mode for QR URL
   const [baseUrl, setBaseUrl] = useState("");
+  const [attendanceMode, setAttendanceMode] = useState<"online" | "hotspot">("online");
   const [networkIps, setNetworkIps] = useState<string[]>([]);
   const [selectedIp, setSelectedIp] = useState<string>("");
 
@@ -205,14 +206,24 @@ export function AttendanceProjectorModal({
     };
   }, [isOpen, session.id]);
 
-  // QR Value: Stable URL for instant, reliable mobile scanning on the classroom hotspot
-  const qrUrl = useMemo(() => {
-    if (selectedIp && selectedIp !== "127.0.0.1" && selectedIp !== "localhost") {
-      return `http://${selectedIp}:3000/attendance?session=${session.id}`;
+  // Dynamic QR Code URL: Supports both Online Cloud (Vercel) and Offline Classroom Hotspot
+  const cloudDomain = useMemo(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      if (!host.includes("localhost") && !host.includes("127.0.0.1") && !host.startsWith("192.168.")) {
+        return window.location.origin;
+      }
     }
-    if (!baseUrl) return "";
-    return `${baseUrl}/attendance?session=${session.id}`;
-  }, [baseUrl, session.id, selectedIp]);
+    return "https://sciora-v2.vercel.app";
+  }, []);
+
+  const qrUrl = useMemo(() => {
+    if (attendanceMode === "online") {
+      return `${cloudDomain}/attendance?session=${session.id}`;
+    }
+    const ip = selectedIp || "192.168.137.1";
+    return `http://${ip}:3000/attendance?session=${session.id}`;
+  }, [attendanceMode, cloudDomain, session.id, selectedIp]);
 
   // Handle End Session
   const handleEnd = async () => {
@@ -363,31 +374,60 @@ export function AttendanceProjectorModal({
       <div className="mt-4 grid flex-1 grid-cols-1 gap-6 overflow-hidden lg:grid-cols-12">
         {/* Left: Projector Presentation Area (7 cols on desktop) */}
         <div className="flex flex-col items-center justify-center rounded-3xl border border-edge bg-card-bg/60 p-6 text-center shadow-soft backdrop-blur-md lg:col-span-7">
-          {/* OFFLINE HOTSPOT BANNER & NETWORK SELECTOR */}
-          <div className="mb-4 flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-accent/30 bg-accent/10 px-4 py-2 text-xs">
-            <span className="flex items-center gap-1.5 font-bold text-accent">
-              <Wifi className="h-4 w-4" />
-              Offline Hotspot Mode:
-            </span>
-            <span className="text-foreground">
-              Students connect to Wi-Fi &rarr; Open:
-            </span>
-            {networkIps.length > 1 ? (
-              <select
-                value={selectedIp}
-                onChange={(e) => setSelectedIp(e.target.value)}
-                className="rounded-lg border border-edge bg-background px-2 py-1 font-mono text-xs font-bold text-accent cursor-pointer"
+          {/* MODE SWITCHER: ONLINE CLOUD VS OFFLINE HOTSPOT */}
+          <div className="mb-4 flex flex-col items-center gap-2">
+            <div className="inline-flex items-center gap-1 rounded-2xl bg-black/5 dark:bg-white/5 p-1 border border-edge">
+              <button
+                type="button"
+                onClick={() => setAttendanceMode("online")}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${attendanceMode === "online"
+                    ? "bg-white text-zinc-950 font-bold shadow-sm"
+                    : "text-muted hover:text-foreground"
+                  }`}
               >
-                {networkIps.map((ip) => (
-                  <option key={ip} value={ip}>
-                    http://{ip}:3000 {ip === "192.168.137.1" ? "(Windows Hotspot)" : ""}
-                  </option>
-                ))}
-              </select>
+                <Globe className="h-3.5 w-3.5" />
+                Online Cloud (Default)
+              </button>
+              <button
+                type="button"
+                onClick={() => setAttendanceMode("hotspot")}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${attendanceMode === "hotspot"
+                    ? "bg-white text-zinc-950 font-bold shadow-sm"
+                    : "text-muted hover:text-foreground"
+                  }`}
+              >
+                <Wifi className="h-3.5 w-3.5" />
+                Offline Hotspot
+              </button>
+            </div>
+
+            {/* Sub-label explaining active mode */}
+            {attendanceMode === "online" ? (
+              <p className="text-[11px] text-muted">
+                Universal check-in: Students use their normal phone data (4G/5G) or campus Wi-Fi.
+              </p>
             ) : (
-              <span className="rounded-lg border border-edge bg-background px-2.5 py-1 font-mono font-bold text-accent">
-                http://{selectedIp || "192.168.137.1"}:3000
-              </span>
+              <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-muted">
+                <span>Hotspot IP:</span>
+                {networkIps.length > 1 ? (
+                  <select
+                    value={selectedIp}
+                    onChange={(e) => setSelectedIp(e.target.value)}
+                    className="rounded-lg border border-edge bg-background px-2 py-0.5 font-mono text-xs font-bold text-accent cursor-pointer"
+                  >
+                    {networkIps.map((ip) => (
+                      <option key={ip} value={ip}>
+                        {ip} {ip === "192.168.137.1" ? "(Windows Hotspot)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="font-mono font-bold text-accent">
+                    {selectedIp || "192.168.137.1"}
+                  </span>
+                )}
+                <span>(No internet required)</span>
+              </div>
             )}
           </div>
 
@@ -417,7 +457,11 @@ export function AttendanceProjectorModal({
             {/* Active Status Badge */}
             <div className="mt-4 flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3.5 py-1 text-xs font-semibold text-emerald-400">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Active Attendance Session • Protected</span>
+              <span>
+                {attendanceMode === "online"
+                  ? "Live Cloud Check-in Active"
+                  : "Offline Hotspot Broadcast Active"}
+              </span>
             </div>
           </div>
 
@@ -427,12 +471,16 @@ export function AttendanceProjectorModal({
               Scan with Phone Camera or Visit:
             </p>
             <div className="my-2.5 flex items-center justify-center gap-2">
-              <span className="font-mono text-xl sm:text-2xl font-bold text-accent select-all">
-                http://{selectedIp || "192.168.137.1"}:3000
+              <span className="font-mono text-lg sm:text-2xl font-bold text-accent select-all break-all">
+                {attendanceMode === "online"
+                  ? "sciora-v2.vercel.app/attendance"
+                  : `http://${selectedIp || "192.168.137.1"}:3000`}
               </span>
             </div>
             <p className="text-xs text-muted">
-              Connect to the lecturer&apos;s Wi-Fi hotspot to record attendance.
+              {attendanceMode === "online"
+                ? "Students can check in directly using any mobile browser on their phone data or Wi-Fi."
+                : "Students must connect to your laptop's Wi-Fi hotspot first before scanning."}
             </p>
           </div>
         </div>

@@ -1,7 +1,7 @@
 appId: com.sciora.lecturer
 productName: Sciora Lecturer Console
 directories:
-  output: dist-electron
+  output: dist-desktop
   buildResources: public
 
 afterPack: scripts/after-pack.js
@@ -18,10 +18,16 @@ files:
 
 win:
   target:
-    - target: portable
+    - target: nsis
       arch:
         - x64
   icon: public/icon.png
 
-portable:
-  artifactName: "Sciora-Lecturer-Console.exe"
+nsis:
+  oneClick: true
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: "Sciora Lecturer Console"
+  artifactName: "Sciora-Lecturer-Setup.exe"

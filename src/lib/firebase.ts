@@ -1,5 +1,10 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import {
+  initializeFirestore,
+  getFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -15,8 +20,22 @@ const firebaseConfig = {
 // Initialize Firebase only if it hasn't been initialized yet
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Firestore
-const db = getFirestore(app);
+// In browser / Electron client environment, enable robust offline persistent local cache
+// so queries resolve instantly (<1ms) without blocking on cloud network timeouts
+let db: ReturnType<typeof getFirestore>;
+if (typeof window !== "undefined") {
+  try {
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+  } catch {
+    db = getFirestore(app);
+  }
+} else {
+  db = getFirestore(app);
+}
 
 // Initialize Storage
 const storage = getStorage(app);
