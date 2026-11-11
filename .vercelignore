@@ -1,0 +1,10 @@
+dist-desktop
+dist-electron
+.cache
+electron
+scripts
+*.exe
+*.lnk
+node_modules
+.next
+
