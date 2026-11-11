@@ -50,6 +50,27 @@ function AttendanceCheckInContent() {
     studentId?: string;
   } | null>(null);
 
+  // Network connection type: Hotspot vs Normal cloud network
+  const [isHotspotConnection, setIsHotspotConnection] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      const isIp =
+        /^(\d{1,3}\.){3}\d{1,3}$/.test(host) ||
+        host === "localhost" ||
+        host.startsWith("192.168.") ||
+        host.startsWith("10.");
+      const isCloud =
+        host.includes("vercel.app") ||
+        host.includes("sciora.app") ||
+        host.endsWith(".com") ||
+        host.endsWith(".app");
+
+      setIsHotspotConnection(isIp && !isCloud);
+    }
+  }, []);
+
   // 1. Mount effect: Mark client active and load saved student ID
   useEffect(() => {
     setIsClient(true);
@@ -250,7 +271,9 @@ function AttendanceCheckInContent() {
               <p className="mt-1 text-xs text-zinc-400">
                 {result.alreadyCheckedIn
                   ? "Your presence was already confirmed for this lecture."
-                  : "You are marked present in the lecturer's offline gradebook."}
+                  : isHotspotConnection
+                  ? "You are marked present in the lecturer's offline gradebook."
+                  : "Your attendance has been verified and recorded successfully."}
               </p>
             </div>
 
@@ -287,16 +310,18 @@ function AttendanceCheckInContent() {
               )}
             </div>
 
-            {/* Disconnect Hotspot Instruction Card */}
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-center text-xs text-amber-200 space-y-1.5">
-              <p className="font-bold text-sm text-amber-300 flex items-center justify-center gap-1.5">
-                <Wifi className="h-4 w-4 text-amber-400" />
-                Please Disconnect from Wi-Fi Now
-              </p>
-              <p className="text-xs text-amber-300/85 leading-relaxed">
-                Your attendance has been permanently recorded. Please turn off Wi-Fi or disconnect from the lecturer&apos;s hotspot to free up slots for other students.
-              </p>
-            </div>
+            {/* Disconnect Hotspot Instruction Card — ONLY shown when using the lecturer's Wi-Fi hotspot */}
+            {isHotspotConnection && (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-center text-xs text-amber-200 space-y-1.5">
+                <p className="font-bold text-sm text-amber-300 flex items-center justify-center gap-1.5">
+                  <Wifi className="h-4 w-4 text-amber-400" />
+                  Please Disconnect from Wi-Fi Now
+                </p>
+                <p className="text-xs text-amber-300/85 leading-relaxed">
+                  Your attendance has been permanently recorded. Please turn off Wi-Fi or disconnect from the lecturer&apos;s hotspot to free up slots for other students.
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           /* FORM VIEW */
@@ -415,7 +440,9 @@ function AttendanceCheckInContent() {
 
             {/* ANTI-PROXY FOOTER */}
             <p className="text-center text-[10px] text-zinc-500 pt-1">
-              Protected by Anti-Proxy Device Lock • Local Classroom Hotspot
+              {isHotspotConnection
+                ? "Protected by Anti-Proxy Device Lock • Local Classroom Hotspot"
+                : "Protected by Anti-Proxy Device Lock • Verified Cloud Attendance"}
             </p>
           </form>
         )}
