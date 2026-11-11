@@ -200,6 +200,20 @@ function createMainWindow() {
     return { action: "deny" };
   });
 
+  // Strict Dashboard Sandbox: Never allow navigation to student pages or landing page
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    try {
+      const parsed = new URL(url);
+      if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+        if (!parsed.pathname.startsWith("/admin") && !parsed.pathname.startsWith("/api")) {
+          event.preventDefault();
+          log("[Sciora Desktop] Non-admin navigation blocked. Redirecting to passkey login:", url);
+          mainWindow.loadURL(`http://localhost:${PORT}/admin/login`);
+        }
+      }
+    } catch {}
+  });
+
   // Load splash screen immediately
   const splashPath = path.join(__dirname, "splash.html");
   if (fs.existsSync(splashPath)) {

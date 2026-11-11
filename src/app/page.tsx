@@ -11,9 +11,15 @@ export default function Home() {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
 
-  // If accessed over local hotspot IP (e.g. 192.168.100.175), immediately route students to the attendance form
+  // Desktop app guard & Hotspot router
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // If running inside the desktop app, never display the landing page — redirect straight to the passkey portal
+      if ((window as any).scioraDesktop?.isDesktop) {
+        window.location.replace("/admin/login");
+        return;
+      }
+
       const host = window.location.hostname;
       if (
         host.startsWith("192.168.") ||

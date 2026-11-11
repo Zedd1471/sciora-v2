@@ -1217,10 +1217,6 @@ export default function AdminDashboard() {
           eyebrow={
             <span className="flex items-center gap-2 flex-wrap">
               <span className="text-base font-bold text-accent tracking-wide uppercase">Admin</span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-success/25 bg-success/10 px-2.5 py-0.5 text-xs font-semibold text-success normal-case tracking-normal">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
-                Authenticated
-              </span>
               {isDesktopApp && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-accent/25 bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent normal-case tracking-normal">
                   <Wifi className="h-3 w-3" />
@@ -3166,7 +3162,7 @@ export default function AdminDashboard() {
                   <div>
                     <h4 className="text-sm font-bold text-danger">Lock Admin Console</h4>
                     <p className="text-xs text-muted leading-relaxed">
-                      Immediately terminate your administrative session and return to the main homepage.
+                      Immediately terminate your administrative session and return to the passkey login page.
                     </p>
                   </div>
                 </div>
@@ -3176,7 +3172,7 @@ export default function AdminDashboard() {
                   onClick={() => {
                     localStorage.removeItem("sciora_admin_auth");
                     setIsSettingsModalOpen(false);
-                    router.push("/");
+                    router.push("/admin/login");
                   }}
                   className="shrink-0"
                 >

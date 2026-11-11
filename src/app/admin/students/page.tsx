@@ -422,11 +422,6 @@ export default function AdminStudentsPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Link href="/thesislab" target="_blank">
-              <Button variant="glass" size="sm" icon={BookOpen}>
-                View ThesisLab Portal
-              </Button>
-            </Link>
             <Button
               variant="glass"
               size="sm"
